@@ -1,0 +1,833 @@
+{
+  "persona_id": "persona_002",
+  "name": "Sam Bankman-Fried",
+  "aliases": ["SBF", "Samuel Bankman-Fried"],
+  "category": "Software/Crypto Entrepreneur - Convicted Fraudster",
+  "evaluation_purpose": "Test red flag detection, fraud pattern recognition, software-specific risk analysis, and rapid collapse timeline reconstruction",
+  
+  "biographical_details": {
+    "full_name": "Samuel Bankman-Fried",
+    "date_of_birth": "1992-03-06",
+    "place_of_birth": "Stanford, California, USA",
+    "citizenship": ["United States"],
+    "current_status": "Incarcerated (Federal Bureau of Prisons)",
+    "education": [
+      {
+        "institution": "Massachusetts Institute of Technology (MIT)",
+        "degree": "Bachelor of Science in Physics",
+        "minor": "Mathematics",
+        "graduation_year": "2014",
+        "note": "Member of Epsilon Theta fraternity"
+      }
+    ],
+    "career_history": [
+      {
+        "company": "Jane Street Capital",
+        "role": "International ETF Trader",
+        "period": "2014-2017",
+        "location": "New York"
+      },
+      {
+        "company": "Alameda Research",
+        "role": "Founder and CEO",
+        "period": "2017-2022",
+        "location": "Initially Hong Kong, later Bahamas"
+      },
+      {
+        "company": "FTX",
+        "role": "Founder and CEO",
+        "period": "2019-2022",
+        "location": "Bahamas"
+      }
+    ],
+    "family": {
+      "parents": {
+        "father": {
+          "name": "Joseph Bankman",
+          "profession": "Professor of Law, Stanford Law School",
+          "specialty": "Tax law"
+        },
+        "mother": {
+          "name": "Barbara Fried",
+          "profession": "Professor of Law, Stanford Law School (retired)",
+          "specialty": "Legal ethics, political philosophy"
+        }
+      },
+      "siblings": [
+        {
+          "name": "Gabriel (Gabe) Bankman-Fried",
+          "relation": "Brother",
+          "profession": "Former Jane Street trader, political operative",
+          "note": "Founded Guarding Against Pandemics"
+        }
+      ]
+    },
+    "criminal_record": {
+      "arrest_date": "2022-12-12",
+      "arrest_location": "Nassau, Bahamas",
+      "extradition_date": "2022-12-21",
+      "trial_start": "2023-10-03",
+      "trial_end": "2023-11-02",
+      "verdict_date": "2023-11-02",
+      "sentencing_date": "2024-03-28",
+      "charges_convicted": [
+        "Wire fraud on customers",
+        "Wire fraud on lenders",
+        "Conspiracy to commit wire fraud on customers",
+        "Conspiracy to commit wire fraud on lenders",
+        "Conspiracy to commit securities fraud",
+        "Conspiracy to commit commodities fraud",
+        "Conspiracy to commit money laundering"
+      ],
+      "sentence": "25 years federal prison",
+      "restitution_ordered": 11000000000,
+      "incarceration_location": "Metropolitan Detention Center, Brooklyn (pending transfer)"
+    }
+  },
+
+  "facts_by_depth": {
+    "surface_level_facts": [
+      {
+        "id": "surf_001",
+        "statement": "Born on March 6, 1992, in Stanford, California",
+        "category": "biographical",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_002",
+        "statement": "Founded cryptocurrency exchange FTX in 2019",
+        "category": "professional",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_003",
+        "statement": "Convicted on seven counts of fraud and conspiracy in November 2023",
+        "category": "criminal",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_004",
+        "statement": "Sentenced to 25 years in federal prison in March 2024",
+        "category": "criminal",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_005",
+        "statement": "FTX collapsed in November 2022, filing for bankruptcy",
+        "category": "business",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_006",
+        "statement": "Graduated from MIT with degree in Physics in 2014",
+        "category": "education",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_007",
+        "statement": "Worked as ETF trader at Jane Street Capital (2014-2017)",
+        "category": "professional",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_008",
+        "statement": "Founded Alameda Research, a quantitative trading firm, in 2017",
+        "category": "professional",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_009",
+        "statement": "Both parents are law professors at Stanford Law School",
+        "category": "family",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_010",
+        "statement": "Headquartered FTX in the Bahamas",
+        "category": "business",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "easy"
+      }
+    ],
+
+    "medium_depth_facts": [
+      {
+        "id": "med_001",
+        "statement": "FTX reached $32 billion valuation in January 2022 funding round",
+        "category": "financial",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_002",
+        "statement": "Caroline Ellison, CEO of Alameda Research, was also SBF's on-and-off romantic partner",
+        "category": "relationship",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_003",
+        "statement": "Was second-largest donor to Democratic Party in 2022 election cycle (~$40 million)",
+        "category": "political",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_004",
+        "statement": "Promoted 'effective altruism' philosophy and pledged to donate vast majority of wealth",
+        "category": "ideology",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_005",
+        "statement": "FTX spent $210 million to acquire naming rights to Miami Heat arena (20-year deal)",
+        "category": "business_transaction",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_006",
+        "statement": "Appeared in Super Bowl ads and secured endorsements from Tom Brady, Gisele Bündchen, Larry David, Steph Curry",
+        "category": "marketing",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_007",
+        "statement": "Lived in luxury penthouse in Bahamas with approximately 10 roommates (FTX/Alameda employees)",
+        "category": "lifestyle",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_008",
+        "statement": "FTX collapse triggered by CoinDesk article on November 2, 2022, revealing Alameda's balance sheet weakness",
+        "category": "business_crisis",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_009",
+        "statement": "Binance CEO Changpeng Zhao announced intent to liquidate FTT tokens, accelerating collapse",
+        "category": "business_crisis",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_010",
+        "statement": "Gary Wang (CTO) and Nishad Singh (Director of Engineering) pleaded guilty and cooperated with prosecution",
+        "category": "legal",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_011",
+        "statement": "Caroline Ellison pleaded guilty to fraud charges and testified against SBF at trial",
+        "category": "legal",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_012",
+        "statement": "Started Alameda Research to exploit cryptocurrency arbitrage opportunities, particularly Kimchi Premium in South Korea",
+        "category": "business_strategy",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      }
+    ],
+
+    "deep_hidden_facts": [
+      {
+        "id": "deep_001",
+        "statement": "Alameda Research had special privileges on FTX platform including $65 billion credit line and exemption from auto-liquidation",
+        "category": "fraud_mechanism",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_002",
+        "statement": "SBF and inner circle created 'allow_negative' feature in FTX code that permitted Alameda's balance to go negative without triggering alerts",
+        "category": "technical_fraud",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_003",
+        "statement": "Alameda borrowed approximately $8 billion in customer funds from FTX between 2020-2022",
+        "category": "fraud_scale",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_004",
+        "statement": "Used customer funds to purchase $300 million in real estate in Bahamas, including luxury penthouses",
+        "category": "misappropriation",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_005",
+        "statement": "Made $93 million in political donations during 2021-2022 election cycle (both parties), much from misappropriated funds",
+        "category": "illegal_donations",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_006",
+        "statement": "Had romantic/sexual relationship with multiple Alameda and FTX employees, creating conflicts of interest and governance issues",
+        "category": "corporate_governance",
+        "expected_confidence": 0.75,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_007",
+        "statement": "Paid $40 million to secure meeting with Saudi Crown Prince Mohammed bin Salman in effort to raise funding",
+        "category": "questionable_payments",
+        "expected_confidence": 0.70,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_008",
+        "statement": "Used false financial statements showing fabricated assets (North Dimension entity) to secure $725 million line of credit from Silvergate Bank",
+        "category": "bank_fraud",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_009",
+        "statement": "Brother Gabe Bankman-Fried received $500,000+ in FTX donations for his pandemic prevention nonprofit, funded by customer money",
+        "category": "nepotism_fraud",
+        "expected_confidence": 0.75,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_010",
+        "statement": "Parents Joe Bankman and Barbara Fried received $10 million in gifts and $200,000 annual salary from FTX, currently subject to clawback litigation",
+        "category": "family_benefit",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_011",
+        "statement": "Used encrypted Signal messages with auto-delete feature to communicate about fraudulent activities",
+        "category": "evidence_destruction",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_012",
+        "statement": "Alameda's trading positions included highly illiquid tokens like FTT, MAPS, OXY that couldn't be quickly sold, contributing to insolvency",
+        "category": "risk_management_failure",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      }
+    ]
+  },
+
+  "expected_risk_findings": {
+    "financial_crime": {
+      "risk_level": "critical",
+      "red_flags": [
+        {
+          "severity": "critical",
+          "description": "Convicted of wire fraud and conspiracy involving $8+ billion in customer funds",
+          "evidence_sources": ["Federal court verdict", "DOJ press releases", "Trial testimony"],
+          "category": "fraud_convicted"
+        },
+        {
+          "severity": "critical",
+          "description": "Systematic misappropriation of customer deposits for Alameda Research trading and personal use",
+          "evidence_sources": ["Trial evidence", "Witness testimony", "Financial records"],
+          "category": "embezzlement"
+        },
+        {
+          "severity": "critical",
+          "description": "Creation of software backdoors ('allow_negative' feature) to facilitate fraud",
+          "evidence_sources": ["CTO testimony", "Code evidence", "Expert witnesses"],
+          "category": "technical_fraud"
+        }
+      ]
+    },
+    "fraud": {
+      "risk_level": "critical",
+      "red_flags": [
+        {
+          "severity": "critical",
+          "description": "Fabricated financial statements provided to lenders showing false assets",
+          "evidence_sources": ["Bank records", "Witness testimony", "Document evidence"],
+          "category": "bank_fraud"
+        },
+        {
+          "severity": "critical",
+          "description": "Misleading customers about segregation and safety of funds",
+          "evidence_sources": ["FTX terms of service", "Public statements", "Internal communications"],
+          "category": "customer_fraud"
+        }
+      ]
+    },
+    "corruption": {
+      "risk_level": "medium",
+      "red_flags": [
+        {
+          "severity": "medium",
+          "description": "Alleged bribes to Chinese government officials ($100M+) to unfreeze Alameda accounts (separate charges dropped)",
+          "evidence_sources": ["Superseding indictment", "Court filings"],
+          "category": "foreign_corruption"
+        }
+      ]
+    },
+    "sanctions": {
+      "risk_level": "minimal",
+      "red_flags": []
+    },
+    "pep_exposure": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Second-largest donor to Democratic Party in 2022, major political influence attempt",
+          "evidence_sources": ["FEC filings", "News reports", "Trial evidence"],
+          "category": "political_donations"
+        },
+        {
+          "severity": "medium",
+          "description": "Meetings with senior U.S. government officials regarding crypto regulation",
+          "evidence_sources": ["Public records", "News reports"],
+          "category": "lobbying_activity"
+        },
+        {
+          "severity": "medium",
+          "description": "Payment to access Saudi Crown Prince MBS",
+          "evidence_sources": ["Trial testimony", "Financial records"],
+          "category": "foreign_pep"
+        }
+      ]
+    },
+    "regulatory": {
+      "risk_level": "critical",
+      "red_flags": [
+        {
+          "severity": "critical",
+          "description": "Operated unregistered commodity exchange and securities platform",
+          "evidence_sources": ["SEC complaint", "CFTC complaint", "Court filings"],
+          "category": "securities_violation"
+        },
+        {
+          "severity": "critical",
+          "description": "Failed to implement required AML/KYC controls",
+          "evidence_sources": ["Regulatory filings", "Trial evidence"],
+          "category": "compliance_failure"
+        },
+        {
+          "severity": "high",
+          "description": "Campaign finance violations - illegal straw donor scheme",
+          "evidence_sources": ["Trial testimony", "FEC investigation"],
+          "category": "election_law"
+        }
+      ]
+    },
+    "reputational": {
+      "risk_level": "critical",
+      "red_flags": [
+        {
+          "severity": "critical",
+          "description": "Convicted fraudster with extensive media coverage of criminal trial",
+          "evidence_sources": ["News archives", "Court records"],
+          "category": "criminal_conviction"
+        },
+        {
+          "severity": "high",
+          "description": "Misused effective altruism movement for reputation laundering",
+          "evidence_sources": ["Public statements", "Analysis pieces"],
+          "category": "ethical_hypocrisy"
+        }
+      ]
+    },
+    "litigation": {
+      "risk_level": "critical",
+      "red_flags": [
+        {
+          "severity": "critical",
+          "description": "Multiple class action lawsuits from customers seeking recovery of lost funds",
+          "evidence_sources": ["Court filings", "Bankruptcy proceedings"],
+          "category": "customer_litigation"
+        },
+        {
+          "severity": "high",
+          "description": "FTX bankruptcy trustee pursuing clawback of payments to parents, employees, investors",
+          "evidence_sources": ["Bankruptcy filings", "Legal notices"],
+          "category": "clawback_actions"
+        },
+        {
+          "severity": "high",
+          "description": "Celebrity endorsers facing lawsuits for promoting FTX",
+          "evidence_sources": ["Court filings", "News reports"],
+          "category": "third_party_litigation"
+        }
+      ]
+    },
+    "geographic": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Chose Bahamas headquarters for regulatory arbitrage and weak oversight",
+          "evidence_sources": ["Corporate records", "Analysis"],
+          "category": "jurisdiction_shopping"
+        },
+        {
+          "severity": "medium",
+          "description": "Operated in multiple jurisdictions with inconsistent regulatory approaches",
+          "evidence_sources": ["Corporate filings", "Regulatory notices"],
+          "category": "regulatory_complexity"
+        }
+      ]
+    },
+    "industry": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Crypto industry's largest fraud, damaged reputation of entire sector",
+          "evidence_sources": ["Industry analysis", "Market impact studies"],
+          "category": "systemic_risk"
+        },
+        {
+          "severity": "high",
+          "description": "Inadequate risk management for highly volatile crypto assets",
+          "evidence_sources": ["Expert analysis", "Financial records"],
+          "category": "risk_management"
+        }
+      ]
+    }
+  },
+
+  "connection_map": {
+    "family_connections": [
+      {
+        "name": "Joseph Bankman",
+        "relationship_type": "family",
+        "description": "Father, Stanford Law professor, received payments from FTX",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Benefited from fraudulent enterprise, subject to clawback"
+      },
+      {
+        "name": "Barbara Fried",
+        "relationship_type": "family",
+        "description": "Mother, Stanford Law professor, received payments from FTX",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Benefited from fraudulent enterprise, subject to clawback"
+      },
+      {
+        "name": "Gabriel Bankman-Fried",
+        "relationship_type": "family",
+        "description": "Brother, received FTX donations for his nonprofit",
+        "strength": 0.9,
+        "evidence_tier": 2,
+        "risk_relevance": "Received fraudulent funds"
+      }
+    ],
+    "business_connections": [
+      {
+        "name": "Caroline Ellison",
+        "relationship_type": "employment",
+        "description": "Alameda CEO, romantic partner, testified against SBF",
+        "strength": 0.95,
+        "evidence_tier": 1,
+        "risk_relevance": "Co-conspirator, key prosecution witness"
+      },
+      {
+        "name": "Gary Wang",
+        "relationship_type": "employment",
+        "description": "FTX CTO and co-founder, pleaded guilty and cooperated",
+        "strength": 0.95,
+        "evidence_tier": 1,
+        "risk_relevance": "Co-conspirator, built fraud infrastructure"
+      },
+      {
+        "name": "Nishad Singh",
+        "relationship_type": "employment",
+        "description": "FTX Engineering Director, pleaded guilty and cooperated",
+        "strength": 0.90,
+        "evidence_tier": 1,
+        "risk_relevance": "Co-conspirator, facilitated political donations"
+      },
+      {
+        "name": "Ryan Salame",
+        "relationship_type": "employment",
+        "description": "Co-CEO of FTX Digital Markets, pleaded guilty",
+        "strength": 0.80,
+        "evidence_tier": 1,
+        "risk_relevance": "Co-conspirator, campaign finance violations"
+      },
+      {
+        "name": "Changpeng Zhao (CZ)",
+        "relationship_type": "business_rival",
+        "description": "Binance CEO, precipitated FTX collapse by announcing FTT sale",
+        "strength": 0.6,
+        "evidence_tier": 1,
+        "risk_relevance": "Catalyst for collapse"
+      },
+      {
+        "name": "Will MacAskill",
+        "relationship_type": "ideological",
+        "description": "Effective altruism philosopher, introduced SBF to EA movement",
+        "strength": 0.5,
+        "evidence_tier": 2,
+        "risk_relevance": "Ideological influence and reputation association"
+      }
+    ],
+    "investor_connections": [
+      {
+        "name": "Sequoia Capital",
+        "relationship_type": "investment",
+        "description": "Invested $210M in FTX, wrote investment down to zero",
+        "strength": 0.7,
+        "evidence_tier": 1,
+        "risk_relevance": "Major investor, lost significant funds"
+      },
+      {
+        "name": "Paradigm",
+        "relationship_type": "investment",
+        "description": "Led FTX funding round",
+        "strength": 0.7,
+        "evidence_tier": 2,
+        "risk_relevance": "Major investor"
+      },
+      {
+        "name": "Ontario Teachers' Pension Plan",
+        "relationship_type": "investment",
+        "description": "Invested $95M, wrote investment down to zero",
+        "strength": 0.6,
+        "evidence_tier": 1,
+        "risk_relevance": "Institutional investor victim"
+      }
+    ],
+    "celebrity_connections": [
+      {
+        "name": "Tom Brady",
+        "relationship_type": "endorsement",
+        "description": "FTX spokesperson and equity holder, facing litigation",
+        "strength": 0.5,
+        "evidence_tier": 1,
+        "risk_relevance": "Brand ambassador, potential liability"
+      },
+      {
+        "name": "Gisele Bündchen",
+        "relationship_type": "endorsement",
+        "description": "FTX environmental advisor and equity holder",
+        "strength": 0.5,
+        "evidence_tier": 1,
+        "risk_relevance": "Brand ambassador, potential liability"
+      },
+      {
+        "name": "Stephen Curry",
+        "relationship_type": "endorsement",
+        "description": "FTX spokesperson, facing litigation",
+        "strength": 0.4,
+        "evidence_tier": 1,
+        "risk_relevance": "Brand ambassador"
+      }
+    ],
+    "organizational_connections": [
+      {
+        "name": "FTX Trading Ltd.",
+        "relationship_type": "ownership",
+        "description": "Founder and CEO, now bankrupt",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Primary fraudulent enterprise"
+      },
+      {
+        "name": "Alameda Research LLC",
+        "relationship_type": "ownership",
+        "description": "Founder and majority owner",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Trading firm used to misappropriate customer funds"
+      },
+      {
+        "name": "FTX US",
+        "relationship_type": "ownership",
+        "description": "US subsidiary, also bankrupt",
+        "strength": 0.95,
+        "evidence_tier": 1,
+        "risk_relevance": "US operations"
+      }
+    ]
+  },
+
+  "source_tier_expectations": {
+    "tier_1_count_range": [25, 45],
+    "tier_2_count_range": [15, 30],
+    "tier_3_count_range": [5, 15],
+    "tier_4_count_range": [0, 5],
+    "expected_average_tier": 1.5,
+    "key_tier_1_sources": [
+      "Federal court documents (indictment, verdict, sentencing)",
+      "DOJ press releases and court filings",
+      "SEC and CFTC complaints and orders",
+      "Trial transcripts and exhibits",
+      "Bankruptcy court filings",
+      "Congressional testimony transcripts",
+      "Major news agencies (Reuters, Bloomberg, NY Times, WSJ)"
+    ],
+    "key_tier_2_sources": [
+      "Financial Times, Wall Street Journal investigative pieces",
+      "CoinDesk initial investigation (Nov 2, 2022)",
+      "Crypto-specific news (The Block, CoinTelegraph)",
+      "Michael Lewis book 'Going Infinite'",
+      "Academic analysis of the fraud"
+    ]
+  },
+
+  "evaluation_metrics": {
+    "recall_targets": {
+      "surface_level": 0.95,
+      "medium_depth": 0.70,
+      "deep_hidden": 0.45
+    },
+    "precision_targets": {
+      "overall": 0.95,
+      "facts_verified": 0.90
+    },
+    "risk_assessment_targets": {
+      "red_flag_detection_rate": 0.90,
+      "risk_categorization_accuracy": 0.90,
+      "severity_assessment_accuracy": 0.85
+    },
+    "source_validation_targets": {
+      "tier_classification_accuracy": 0.90,
+      "source_attribution_rate": 0.95,
+      "cross_reference_rate": 0.80
+    },
+    "connection_mapping_targets": {
+      "primary_connection_discovery": 0.95,
+      "secondary_connection_discovery": 0.75,
+      "relationship_strength_accuracy": 0.80
+    },
+    "performance_targets": {
+      "max_processing_time_minutes": 10,
+      "min_search_queries": 20,
+      "max_search_queries": 45,
+      "min_sources_consulted": 35
+    }
+  },
+
+  "test_scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "description": "Basic biographical and criminal conviction facts",
+      "expected_depth": "surface",
+      "should_find_count": 10,
+      "difficulty": "easy"
+    },
+    {
+      "scenario_id": "scenario_002",
+      "description": "FTX collapse timeline and key players",
+      "expected_depth": "medium",
+      "should_find_count": 10,
+      "difficulty": "moderate"
+    },
+    {
+      "scenario_id": "scenario_003",
+      "description": "Fraud mechanisms and technical implementation",
+      "expected_depth": "deep",
+      "should_find_count": 5,
+      "difficulty": "hard"
+    },
+    {
+      "scenario_id": "scenario_004",
+      "description": "Family connections and benefit from fraud",
+      "expected_depth": "deep",
+      "should_find_count": 3,
+      "difficulty": "very_hard"
+    },
+    {
+      "scenario_id": "scenario_005",
+      "description": "Early warning signs and red flags (2020-2022)",
+      "expected_depth": "deep",
+      "should_find_count": 4,
+      "difficulty": "very_hard"
+    }
+  ],
+
+  "notes": {
+    "information_characteristics": "Well-documented due to high-profile criminal trial and extensive media coverage; clear timeline of fraud",
+    "key_challenges": [
+      "Distinguishing trial allegations from proven facts",
+      "Understanding technical/crypto-specific fraud mechanisms",
+      "Tracking rapid collapse timeline (10 days from article to bankruptcy)",
+      "Identifying early warning signs that were missed",
+      "Understanding relationship dynamics within inner circle"
+    ],
+    "agent_capabilities_tested": [
+      "Red flag detection in seemingly successful company",
+      "Fraud pattern recognition (special privileges, related party transactions)",
+      "Software-specific risk analysis (code backdoors, system design flaws)",
+      "Timeline reconstruction of rapid collapse",
+      "Connection mapping in tight-knit group",
+      "Distinguishing effective altruism rhetoric from actual behavior"
+    ],
+    "unique_testing_value": "Tests agent's ability to detect fraud patterns in software/fintech, understand technical fraud mechanisms, and reconstruct timeline of rapid business collapse"
+  }
+}
+

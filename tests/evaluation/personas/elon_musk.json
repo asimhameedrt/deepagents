@@ -1,0 +1,769 @@
+{
+  "persona_id": "persona_001",
+  "name": "Elon Musk",
+  "category": "High-Profile Tech Entrepreneur",
+  "evaluation_purpose": "Test connection mapping, source validation, regulatory risk detection, and information overload filtering",
+  
+  "biographical_details": {
+    "full_name": "Elon Reeve Musk",
+    "date_of_birth": "1971-06-28",
+    "place_of_birth": "Pretoria, South Africa",
+    "citizenships": ["South Africa", "Canada", "United States"],
+    "current_residence": "Austin, Texas, USA",
+    "education": [
+      {
+        "institution": "University of Pretoria",
+        "location": "South Africa",
+        "duration": "5 months",
+        "year": "1989"
+      },
+      {
+        "institution": "Queen's University",
+        "location": "Kingston, Ontario, Canada",
+        "duration": "2 years",
+        "year": "1989-1992"
+      },
+      {
+        "institution": "University of Pennsylvania",
+        "degrees": ["Bachelor of Arts in Physics", "Bachelor of Science in Economics (Wharton)"],
+        "graduation_year": "1997"
+      }
+    ],
+    "current_positions": [
+      "CEO and Product Architect of Tesla, Inc.",
+      "Founder, CEO, and Chief Engineer of SpaceX",
+      "Founder and CEO of xAI",
+      "Owner and CTO of X Corp. (formerly Twitter)",
+      "Founder of The Boring Company",
+      "Co-founder of Neuralink",
+      "President of the Musk Foundation"
+    ],
+    "net_worth": {
+      "amount": 500000000000,
+      "currency": "USD",
+      "as_of": "2025-10-02",
+      "source": "Forbes",
+      "ranking": "Richest person in the world"
+    },
+    "family": {
+      "parents": {
+        "mother": {
+          "name": "Maye Musk",
+          "profession": "Model and Dietitian",
+          "nationality": "Canadian-South African"
+        },
+        "father": {
+          "name": "Errol Musk",
+          "profession": "Electromechanical engineer, pilot, sailor",
+          "nationality": "South African"
+        }
+      },
+      "siblings": [
+        {
+          "name": "Kimbal Musk",
+          "relation": "Brother",
+          "profession": "Entrepreneur, restaurateur, board member of Tesla and SpaceX"
+        },
+        {
+          "name": "Tosca Musk",
+          "relation": "Sister",
+          "profession": "Filmmaker and producer"
+        }
+      ],
+      "children": 14,
+      "notable_relationships": [
+        "Justine Wilson (ex-wife, 2000-2008)",
+        "Talulah Riley (ex-wife, married twice: 2010-2012, 2013-2016)",
+        "Grimes (partner, mother of 3 children)",
+        "Shivon Zilis (Neuralink executive, mother of 3 children)"
+      ]
+    }
+  },
+
+  "facts_by_depth": {
+    "surface_level_facts": [
+      {
+        "id": "surf_001",
+        "statement": "Born on June 28, 1971, in Pretoria, South Africa",
+        "category": "biographical",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_002",
+        "statement": "CEO and product architect of Tesla, Inc.",
+        "category": "professional",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_003",
+        "statement": "Founder, CEO, and chief engineer of SpaceX",
+        "category": "professional",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_004",
+        "statement": "Acquired Twitter for $44 billion in October 2022",
+        "category": "business_transaction",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_005",
+        "statement": "Holds citizenship in South Africa, Canada, and the United States",
+        "category": "biographical",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_006",
+        "statement": "Graduated from University of Pennsylvania with degrees in Physics and Economics in 1997",
+        "category": "education",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_007",
+        "statement": "Rebranded Twitter to X in July 2023",
+        "category": "business",
+        "expected_confidence": 0.99,
+        "expected_source_tier": 1,
+        "verification_difficulty": "trivial"
+      },
+      {
+        "id": "surf_008",
+        "statement": "Co-founded Neuralink, a neurotechnology company",
+        "category": "professional",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_009",
+        "statement": "Founded The Boring Company, focused on tunnel construction",
+        "category": "professional",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "surf_010",
+        "statement": "Net worth estimated at over $400 billion as of late 2024",
+        "category": "financial",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "easy"
+      }
+    ],
+
+    "medium_depth_facts": [
+      {
+        "id": "med_001",
+        "statement": "Co-founded Zip2 in 1995, which was sold to Compaq for $307 million in 1999",
+        "category": "business_history",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_002",
+        "statement": "Founded X.com in 1999, which merged with Confinity to become PayPal, sold to eBay for $1.5 billion in 2002",
+        "category": "business_history",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_003",
+        "statement": "Joined Tesla Motors in 2004 as chairman with a $6.5 million investment, became CEO in 2008",
+        "category": "professional",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_004",
+        "statement": "Settled with SEC in 2018 for $40 million ($20M personal, $20M Tesla) over 'funding secured' tweet, required to step down as Tesla chairman",
+        "category": "regulatory",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_005",
+        "statement": "SpaceX became first private company to send astronauts to the ISS with Crew Dragon Demo-2 mission in May 2020",
+        "category": "achievement",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_006",
+        "statement": "Served as Senior Advisor to President Donald Trump from January 2025 to May 2025, resigned after public disputes",
+        "category": "political",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_007",
+        "statement": "Brother Kimbal Musk serves on the boards of both Tesla and SpaceX",
+        "category": "connection",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_008",
+        "statement": "Acquired SolarCity in 2016 for $2.6 billion, which became Tesla Energy",
+        "category": "business_transaction",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 1,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_009",
+        "statement": "Tesla opened Gigafactory Shanghai in 2019, first wholly foreign-owned car plant in China",
+        "category": "geographic",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_010",
+        "statement": "Named Time Person of the Year in 2021",
+        "category": "recognition",
+        "expected_confidence": 0.95,
+        "expected_source_tier": 1,
+        "verification_difficulty": "easy"
+      },
+      {
+        "id": "med_011",
+        "statement": "Disclosed Asperger's syndrome during Saturday Night Live appearance in May 2021",
+        "category": "personal",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      },
+      {
+        "id": "med_012",
+        "statement": "Founded xAI in March 2023, an artificial intelligence company",
+        "category": "professional",
+        "expected_confidence": 0.90,
+        "expected_source_tier": 2,
+        "verification_difficulty": "moderate"
+      }
+    ],
+
+    "deep_hidden_facts": [
+      {
+        "id": "deep_001",
+        "statement": "Tesla co-founder Martin Eberhard filed lawsuit in 2009 claiming Musk retroactively designated himself as co-founder; settled with terms allowing Musk to use 'co-founder' title",
+        "category": "litigation_history",
+        "expected_confidence": 0.75,
+        "expected_source_tier": 3,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_002",
+        "statement": "Father Errol Musk had part-ownership in Zambian emerald mine during apartheid era, contributing to family wealth; Elon has disputed extent of benefit",
+        "category": "family_wealth",
+        "expected_confidence": 0.70,
+        "expected_source_tier": 3,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_003",
+        "statement": "Neuralink faced federal investigation in 2022 for potential animal welfare violations; internal reports suggested 1,500+ animals killed since 2018",
+        "category": "regulatory_ethical",
+        "expected_confidence": 0.75,
+        "expected_source_tier": 2,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_004",
+        "statement": "SpaceX allegedly violated water pollution laws in Texas; received notice from EPA in 2023 for unpermitted wastewater discharges",
+        "category": "regulatory",
+        "expected_confidence": 0.70,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_005",
+        "statement": "Multiple SpaceX employees fired in June 2022 after circulating letter criticizing Musk's behavior; employees filed NLRB complaints",
+        "category": "litigation_employment",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_006",
+        "statement": "Delaware Court of Chancery voided Musk's $55.8 billion Tesla compensation package in January 2024, ruling board process was flawed",
+        "category": "litigation_corporate",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 1,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_007",
+        "statement": "Dropped out of Stanford PhD program in applied physics after only 2 days in 1995 to start Zip2",
+        "category": "education_history",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_008",
+        "statement": "Had infant son Nevada Alexander Musk who died at 10 weeks old from SIDS in 2002",
+        "category": "personal_tragedy",
+        "expected_confidence": 0.85,
+        "expected_source_tier": 2,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_009",
+        "statement": "Sued by Twitter shareholders in 2023 for alleged $150+ million in losses from delayed disclosure of his stake accumulation",
+        "category": "litigation_securities",
+        "expected_confidence": 0.75,
+        "expected_source_tier": 2,
+        "verification_difficulty": "very_hard",
+        "requires_consecutive_search": true
+      },
+      {
+        "id": "deep_010",
+        "statement": "Had twins with Shivon Zilis (Neuralink executive) in November 2021, born weeks before second child with Grimes; relationship not disclosed until 2022",
+        "category": "personal_undisclosed",
+        "expected_confidence": 0.80,
+        "expected_source_tier": 2,
+        "verification_difficulty": "hard",
+        "requires_consecutive_search": true
+      }
+    ]
+  },
+
+  "expected_risk_findings": {
+    "financial_crime": {
+      "risk_level": "low",
+      "red_flags": [
+        {
+          "severity": "medium",
+          "description": "SEC settlement for securities fraud regarding 'funding secured' tweet (2018)",
+          "evidence_sources": ["SEC official filing", "Court documents"],
+          "category": "securities_violation"
+        }
+      ]
+    },
+    "fraud": {
+      "risk_level": "low",
+      "red_flags": []
+    },
+    "corruption": {
+      "risk_level": "low",
+      "red_flags": []
+    },
+    "sanctions": {
+      "risk_level": "minimal",
+      "red_flags": []
+    },
+    "pep_exposure": {
+      "risk_level": "medium",
+      "red_flags": [
+        {
+          "severity": "medium",
+          "description": "Served as Senior Advisor to President Trump (January-May 2025)",
+          "evidence_sources": ["White House announcements", "Major news outlets"],
+          "category": "political_appointment"
+        },
+        {
+          "severity": "low",
+          "description": "Direct business discussions with Chinese government officials regarding Tesla operations",
+          "evidence_sources": ["News reports", "Company disclosures"],
+          "category": "foreign_government_relations"
+        }
+      ]
+    },
+    "regulatory": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "SEC settlement and ongoing oversight regarding public statements (2018-present)",
+          "evidence_sources": ["SEC filings", "Court documents"],
+          "category": "securities_regulation"
+        },
+        {
+          "severity": "medium",
+          "description": "NHTSA investigations into Tesla Autopilot safety and marketing claims",
+          "evidence_sources": ["NHTSA official reports"],
+          "category": "product_safety"
+        },
+        {
+          "severity": "medium",
+          "description": "Federal investigation into Neuralink for potential animal welfare violations (2022)",
+          "evidence_sources": ["Reuters investigation", "USDA records"],
+          "category": "animal_welfare"
+        },
+        {
+          "severity": "medium",
+          "description": "EPA violations for unpermitted wastewater discharges in Texas",
+          "evidence_sources": ["EPA notice", "Environmental reports"],
+          "category": "environmental"
+        }
+      ]
+    },
+    "reputational": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Controversies over social media posts, including alleged misinformation and controversial political statements",
+          "evidence_sources": ["News archives", "Fact-checking organizations"],
+          "category": "public_statements"
+        },
+        {
+          "severity": "medium",
+          "description": "Public feuds with regulators, journalists, and other public figures",
+          "evidence_sources": ["Social media archives", "News reports"],
+          "category": "public_relations"
+        },
+        {
+          "severity": "medium",
+          "description": "Criticism for political affiliations and policy positions",
+          "evidence_sources": ["News outlets", "Public statements"],
+          "category": "political_controversy"
+        }
+      ]
+    },
+    "litigation": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Delaware Court voided $55.8 billion compensation package (2024)",
+          "evidence_sources": ["Court ruling", "Legal filings"],
+          "category": "corporate_governance"
+        },
+        {
+          "severity": "medium",
+          "description": "Shareholder lawsuit over SolarCity acquisition claiming conflict of interest",
+          "evidence_sources": ["Court filings", "Trial records"],
+          "category": "shareholder_dispute"
+        },
+        {
+          "severity": "medium",
+          "description": "Multiple wrongful termination lawsuits from SpaceX employees (2022-2023)",
+          "evidence_sources": ["NLRB complaints", "Court filings"],
+          "category": "employment_law"
+        },
+        {
+          "severity": "medium",
+          "description": "Twitter shareholders lawsuit over delayed stake disclosure (2023)",
+          "evidence_sources": ["Federal court filing"],
+          "category": "securities_litigation"
+        }
+      ]
+    },
+    "geographic": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Significant Tesla operations in China create geopolitical risk and potential conflicts with U.S. interests",
+          "evidence_sources": ["Business reports", "Geopolitical analyses"],
+          "category": "geopolitical_risk"
+        },
+        {
+          "severity": "medium",
+          "description": "Complex navigation of U.S.-China relations while maintaining business interests in both countries",
+          "evidence_sources": ["News analysis", "Company filings"],
+          "category": "cross_border_complexity"
+        }
+      ]
+    },
+    "industry": {
+      "risk_level": "high",
+      "red_flags": [
+        {
+          "severity": "high",
+          "description": "Rapid technological change and intense competition in EV and space industries",
+          "evidence_sources": ["Industry reports", "Market analyses"],
+          "category": "market_competition"
+        },
+        {
+          "severity": "medium",
+          "description": "Safety concerns and regulatory scrutiny of autonomous driving technology",
+          "evidence_sources": ["NHTSA reports", "Accident data"],
+          "category": "technology_risk"
+        }
+      ]
+    }
+  },
+
+  "connection_map": {
+    "family_connections": [
+      {
+        "name": "Kimbal Musk",
+        "relationship_type": "family",
+        "description": "Brother, board member of Tesla and SpaceX",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Potential corporate governance concerns"
+      },
+      {
+        "name": "Errol Musk",
+        "relationship_type": "family",
+        "description": "Father, estranged relationship, emerald mine wealth controversy",
+        "strength": 0.5,
+        "evidence_tier": 2,
+        "risk_relevance": "Family wealth origin questions"
+      }
+    ],
+    "business_connections": [
+      {
+        "name": "Gwynne Shotwell",
+        "relationship_type": "employment",
+        "description": "President and COO of SpaceX since 2008",
+        "strength": 0.95,
+        "evidence_tier": 1,
+        "risk_relevance": "Key operational executive"
+      },
+      {
+        "name": "JB Straubel",
+        "relationship_type": "business_partner",
+        "description": "Tesla co-founder and former CTO",
+        "strength": 0.8,
+        "evidence_tier": 2,
+        "risk_relevance": "Historical co-founder relationship"
+      },
+      {
+        "name": "Martin Eberhard",
+        "relationship_type": "legal",
+        "description": "Tesla original founder, legal dispute over co-founder status",
+        "strength": 0.3,
+        "evidence_tier": 2,
+        "risk_relevance": "Historical litigation"
+      },
+      {
+        "name": "Larry Ellison",
+        "relationship_type": "directorship",
+        "description": "Oracle founder, Tesla board member, personal friend",
+        "strength": 0.7,
+        "evidence_tier": 2,
+        "risk_relevance": "Board governance and oversight"
+      },
+      {
+        "name": "Peter Thiel",
+        "relationship_type": "business_partner",
+        "description": "PayPal co-founder, early business associate",
+        "strength": 0.6,
+        "evidence_tier": 2,
+        "risk_relevance": "Historical business relationship"
+      },
+      {
+        "name": "Sam Altman",
+        "relationship_type": "business_partner",
+        "description": "OpenAI co-founder, later became adversarial",
+        "strength": 0.4,
+        "evidence_tier": 2,
+        "risk_relevance": "Former partnership, current competition"
+      },
+      {
+        "name": "Shivon Zilis",
+        "relationship_type": "associate",
+        "description": "Neuralink executive, mother of his children",
+        "strength": 0.8,
+        "evidence_tier": 2,
+        "risk_relevance": "Personal and professional overlap"
+      }
+    ],
+    "political_connections": [
+      {
+        "name": "Donald Trump",
+        "relationship_type": "political",
+        "description": "Served as Senior Advisor January-May 2025, resigned after disputes",
+        "strength": 0.5,
+        "evidence_tier": 1,
+        "risk_relevance": "PEP exposure, political controversy"
+      }
+    ],
+    "organizational_connections": [
+      {
+        "name": "Tesla, Inc.",
+        "relationship_type": "ownership",
+        "description": "CEO, ~13% ownership stake",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Primary corporate affiliation"
+      },
+      {
+        "name": "SpaceX",
+        "relationship_type": "ownership",
+        "description": "Founder, CEO, ~42% ownership, ~79% voting control",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Primary corporate affiliation"
+      },
+      {
+        "name": "X Corp. (Twitter)",
+        "relationship_type": "ownership",
+        "description": "Owner, acquired for $44B in 2022",
+        "strength": 1.0,
+        "evidence_tier": 1,
+        "risk_relevance": "Full ownership and control"
+      },
+      {
+        "name": "Neuralink",
+        "relationship_type": "ownership",
+        "description": "Co-founder, significant ownership",
+        "strength": 0.9,
+        "evidence_tier": 2,
+        "risk_relevance": "Regulatory scrutiny"
+      },
+      {
+        "name": "The Boring Company",
+        "relationship_type": "ownership",
+        "description": "Founder, ~90% ownership",
+        "strength": 0.9,
+        "evidence_tier": 2,
+        "risk_relevance": "Primary corporate affiliation"
+      },
+      {
+        "name": "xAI",
+        "relationship_type": "ownership",
+        "description": "Founder and CEO, founded 2023",
+        "strength": 0.95,
+        "evidence_tier": 1,
+        "risk_relevance": "Recent venture"
+      }
+    ]
+  },
+
+  "source_tier_expectations": {
+    "tier_1_count_range": [15, 30],
+    "tier_2_count_range": [20, 40],
+    "tier_3_count_range": [10, 25],
+    "tier_4_count_range": [0, 10],
+    "expected_average_tier": 2.0,
+    "key_tier_1_sources": [
+      "SEC filings and enforcement actions",
+      "Court documents and rulings",
+      "Tesla/SpaceX official press releases",
+      "NHTSA official reports",
+      "Congressional testimony",
+      "Major news agencies (Reuters, AP, Bloomberg)"
+    ],
+    "key_tier_2_sources": [
+      "Wall Street Journal, New York Times, Financial Times",
+      "Industry publications (TechCrunch, The Verge)",
+      "Company annual reports",
+      "Academic research on companies",
+      "Biographies (Walter Isaacson's authorized biography)"
+    ]
+  },
+
+  "evaluation_metrics": {
+    "recall_targets": {
+      "surface_level": 0.95,
+      "medium_depth": 0.70,
+      "deep_hidden": 0.40
+    },
+    "precision_targets": {
+      "overall": 0.90,
+      "facts_verified": 0.85
+    },
+    "risk_assessment_targets": {
+      "red_flag_detection_rate": 0.80,
+      "risk_categorization_accuracy": 0.85,
+      "severity_assessment_accuracy": 0.75
+    },
+    "source_validation_targets": {
+      "tier_classification_accuracy": 0.85,
+      "source_attribution_rate": 0.95,
+      "cross_reference_rate": 0.70
+    },
+    "connection_mapping_targets": {
+      "primary_connection_discovery": 0.90,
+      "secondary_connection_discovery": 0.70,
+      "relationship_strength_accuracy": 0.75
+    },
+    "performance_targets": {
+      "max_processing_time_minutes": 10,
+      "min_search_queries": 15,
+      "max_search_queries": 40,
+      "min_sources_consulted": 30
+    }
+  },
+
+  "test_scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "description": "Basic biographical and professional profile extraction",
+      "expected_depth": "surface",
+      "should_find_count": 10,
+      "difficulty": "easy"
+    },
+    {
+      "scenario_id": "scenario_002",
+      "description": "Corporate network and board relationships mapping",
+      "expected_depth": "medium",
+      "should_find_count": 8,
+      "difficulty": "moderate"
+    },
+    {
+      "scenario_id": "scenario_003",
+      "description": "Regulatory history and SEC issues",
+      "expected_depth": "medium",
+      "should_find_count": 5,
+      "difficulty": "moderate"
+    },
+    {
+      "scenario_id": "scenario_004",
+      "description": "Hidden litigation and early company disputes",
+      "expected_depth": "deep",
+      "should_find_count": 4,
+      "difficulty": "hard"
+    },
+    {
+      "scenario_id": "scenario_005",
+      "description": "Family wealth origins and controversial background",
+      "expected_depth": "deep",
+      "should_find_count": 2,
+      "difficulty": "very_hard"
+    }
+  ],
+
+  "notes": {
+    "information_characteristics": "Extremely high volume of information across all depth levels",
+    "key_challenges": [
+      "Filtering signal from noise given massive media coverage",
+      "Distinguishing verified facts from speculation and allegations",
+      "Managing recency bias - focus on recent events vs historical context",
+      "Handling contradictory information from Musk himself vs other sources"
+    ],
+    "agent_capabilities_tested": [
+      "Connection mapping across complex corporate networks",
+      "Source tier classification with diverse source quality",
+      "Information overload management and prioritization",
+      "Regulatory risk detection and categorization",
+      "Reputational risk assessment in context of high public profile"
+    ],
+    "unique_testing_value": "Tests agent's ability to handle information abundance and extract signal from noise while maintaining accuracy"
+  }
+}
+

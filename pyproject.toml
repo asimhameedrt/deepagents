@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "deep-research-agent"
+version = "1.0.0"
+description = "AI-powered Deep Research Agent for Enhanced Due Diligence"
+authors = ["AI Engineering Team"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "evaluation: Evaluation tests with real personas",
+    "slow: Tests that take significant time"
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
