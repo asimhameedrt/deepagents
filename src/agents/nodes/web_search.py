@@ -115,13 +115,13 @@ async def execute_web_search(state: AgentState) -> AgentState:
     # Add search iteration to audit trail and store in state
     state["search_iterations"].append(iteration_data)
     
-    print("\n\n\n\n\n--------------------------------")
-    print("State after execute_web_search:")
-    import json
-    print(json.dumps(state, indent=2, default=str))
-    print("--------------------------------")
+    # print("\n\n\n\n\n--------------------------------")
+    # print("State after execute_web_search:")
+    # import json
+    # print(json.dumps(state, indent=2, default=str))
+    # print("--------------------------------")
     
-    exit()
+    # exit()
     
     return state
 

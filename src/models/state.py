@@ -57,6 +57,15 @@ class AgentState(TypedDict):
     # Search Results Memory - shared workflow memory for decision-making
     search_memory: List[Dict[str, Any]]  # List of search iteration search results
     
+    # Reflection & Entity Tracking
+    reflection_memory: List[Dict[str, Any]]  # List of reflection outputs per iteration
+    discovered_entities: Dict[str, Any]  # Merged entities with metadata (LLM-managed)
+    entity_graph: Dict[str, Any]  # Simple graph structure: {"nodes": [...], "edges": [...]}
+    
+    # Risk Assessment
+    risk_indicators: Dict[str, List[str]]  # Categorized findings: red_flags, neutral, positive
+    confidence_score: float  # Overall research confidence (0-1)
+    
     # Messages (for LangGraph)
     messages: List[BaseMessage]
 

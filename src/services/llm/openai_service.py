@@ -14,6 +14,7 @@ from ...models.search_result import (
     WebSearchOutput,
     WebSearchSource,
     SearchQueriesList,
+    ConnectionMappingOutput,
 )
 from ...observability.detailed_logger import DetailedLogger
 from ...prompts import (
@@ -168,4 +169,130 @@ class OpenAIService:
             
         except Exception as e:
             raise ValueError(f"Query generation failed: {str(e)}")
+    
+    async def map_entity_connections(
+        self,
+        discovered_entities: dict,
+        reflection_memory: List[dict],
+        existing_graph: dict
+    ) -> ConnectionMappingOutput:
+        """
+        Map connections between entities using OpenAI Agents SDK.
+        
+        Args:
+            discovered_entities: Dictionary of discovered entities
+            reflection_memory: List of all reflection outputs
+            existing_graph: Current entity graph structure
+            
+        Returns:
+            ConnectionMappingOutput with nodes, edges, and patterns
+        """
+        # Build comprehensive context for connection mapping
+        context = self._build_connection_context(
+            discovered_entities,
+            reflection_memory,
+            existing_graph
+        )
+        
+        instructions = """You are an expert intelligence analyst specializing in entity relationship mapping.
+
+Your task is to analyze discovered entities and relationships to build a comprehensive entity graph.
+
+You must:
+1. Create graph nodes for all entities (persons, organizations, events, locations)
+2. Create graph edges representing relationships between entities
+3. Identify patterns in the connections (e.g., overlapping relationships, timing patterns)
+4. Flag suspicious patterns automatically (conflicts of interest, hidden relationships, timing anomalies)
+5. Assess key entities based on centrality to investigation (importance scoring with reasoning)
+
+For graph structure:
+- Each node needs: id, name, type, attributes
+- Each edge needs: source, target, relationship, confidence, attributes
+- Node IDs should be lowercase, no spaces (e.g., "sam_bankman_fried")
+- Relationships should be descriptive (e.g., "founded_and_controlled", "romantic_and_professional")
+
+For pattern detection:
+- Look for conflicts of interest (dual roles, related party transactions)
+- Identify timing patterns (coordinated actions, suspicious timing)
+- Flag hidden or undisclosed relationships
+- Note discrepancies between stated and actual relationships
+
+For entity importance:
+- Consider: connection count, involvement in red flags, centrality to subject
+- Score 0-1 with clear reasoning"""
+        
+        agent = Agent(
+            name="ConnectionMapper",
+            model=self.search_model,
+            instructions=instructions,
+            output_type=ConnectionMappingOutput,
+            model_settings=ModelSettings(verbosity="medium"),
+        )
+        
+        start_time = time.time()
+        result = await Runner.run(agent, context, run_config=RunConfig(tracing_disabled=True))
+        extracted_tokens = await extract_tokens(result)
+        duration_ms = (time.time() - start_time) * 1000
+        
+        output: ConnectionMappingOutput = result.final_output
+        
+        self._logger.log_llm_call(
+            operation="connection_mapping",
+            model=self.search_model,
+            input_data={"entities_count": len(discovered_entities), "existing_nodes": len(existing_graph.get("nodes", []))},
+            output_data={
+                "new_nodes": len(output.new_nodes),
+                "new_edges": len(output.new_edges),
+                "patterns": len(output.patterns_identified),
+                "suspicious_patterns": len(output.suspicious_patterns)
+            },
+            duration_ms=duration_ms,
+            tokens=extracted_tokens
+        )
+        
+        return output
+    
+    def _build_connection_context(
+        self,
+        discovered_entities: dict,
+        reflection_memory: List[dict],
+        existing_graph: dict
+    ) -> str:
+        """Build context prompt for connection mapping."""
+        context = "# Entity Relationship Mapping Task\n\n"
+        
+        # Add discovered entities
+        context += "## Discovered Entities\n"
+        for entity_name, entity_data in discovered_entities.items():
+            context += f"- {entity_name}: {entity_data}\n"
+        
+        # Add relationships from all reflections
+        context += "\n## Discovered Relationships\n"
+        for i, reflection in enumerate(reflection_memory):
+            relationships = reflection.get("new_relationships", [])
+            if relationships:
+                context += f"\nIteration {i}:\n"
+                for rel in relationships:
+                    context += f"- {rel}\n"
+        
+        # Add existing graph context
+        if existing_graph.get("nodes"):
+            context += f"\n## Existing Graph\n"
+            context += f"Current nodes: {len(existing_graph.get('nodes', []))}\n"
+            context += f"Current edges: {len(existing_graph.get('edges', []))}\n"
+        
+        # Add red flags for suspicious pattern detection
+        context += "\n## Known Red Flags\n"
+        for reflection in reflection_memory:
+            red_flags = reflection.get("red_flags", [])
+            for rf in red_flags:
+                finding = rf.get("finding") if isinstance(rf, dict) else rf
+                context += f"- {finding}\n"
+        
+        context += "\n## Your Task\n"
+        context += "Analyze all entities and relationships to create/update the entity graph. "
+        context += "Identify patterns and flag suspicious connections. "
+        context += "Assess importance of key entities.\n"
+        
+        return context
 

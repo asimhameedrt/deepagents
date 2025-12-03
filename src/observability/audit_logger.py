@@ -172,6 +172,27 @@ class AuditLogger:
             "duration_seconds": duration_seconds
         })
     
+    def log(self, event: str, data: Dict[str, Any]) -> None:
+        """
+        Generic log method for flexible logging.
+        
+        Args:
+            event: Event type/name
+            data: Event data dictionary
+        """
+        # Extract session_id if present, otherwise use 'unknown'
+        session_id = data.get("session_id", "unknown")
+        
+        # Log using structlog
+        self.logger.info(event, **data)
+        
+        # Also write to session-specific file if session_id exists
+        if session_id != "unknown":
+            self._write_session_log(session_id, {
+                "event": event,
+                **data
+            })
+    
     def _write_session_log(self, session_id: str, data: Dict[str, Any]) -> None:
         """Write to session-specific log file."""
         log_file = self.log_dir / f"{session_id}.jsonl"

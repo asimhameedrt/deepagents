@@ -1,4 +1,4 @@
-"""Query generation node for LangGraph workflow."""
+"""Query generation node for LangGraph workflow using Claude."""
 
 from ...models.state import AgentState
 from ...services.search.query_generator import QueryGenerator
@@ -7,13 +7,23 @@ from ...observability.detailed_logger import log_node_execution, DetailedLogger
 @log_node_execution
 async def generate_search_queries(state: AgentState) -> AgentState:
     """
-    Generate search queries based on current state.
+    Generate search queries using Claude based on reflection analysis.
+    
+    For Depth 0 (initial):
+    - Generates broad queries covering biographical, professional, financial, legal aspects
+    
+    For Depth > 0 (refinement):
+    - Uses reflection memory to guide query generation
+    - Prioritizes red flags and high-severity issues
+    - Targets newly discovered entities
+    - Fills identified information gaps
+    - Avoids repeating previous queries
     
     Args:
         state: Current agent state
         
     Returns:
-        Updated agent state with new queries
+        Updated agent state with pending queries
     """
     logger = DetailedLogger(state.get("session_id", "unknown"))
     query_generator = QueryGenerator(session_id=state.get("session_id"))
@@ -22,43 +32,41 @@ async def generate_search_queries(state: AgentState) -> AgentState:
     
     try:
         if current_depth == 0:
-            # Initial queries
-            logger.log("generating_initial_queries", {"subject": state["subject"]})
+            # Initial broad queries
+            logger.log_info("Generating initial queries", {
+                "subject": state["subject"],
+                "depth": current_depth
+            })
+                        
             queries = await query_generator.generate_initial_queries(
                 subject=state["subject"],
                 context=state.get("subject_context")
             )
+            
         else:
-            # Enhanced refined queries based on discoveries and analysis
-            logger.log("refining_queries", {
+            # Refined queries based on reflection
+            logger.log_info("Generating refined queries from reflection", {
                 "depth": current_depth,
-                "entities_count": len(state.get("entities", [])),
-                "facts_count": len(state.get("facts", [])),
-                "next_steps_count": len(state.get("next_steps", [])),
-                "information_gaps_count": len(state.get("information_gaps", [])),
-                "red_flags_count": len(state.get("red_flags", [])),
-                "connections_count": len(state.get("connections", []))
+                "reflections_count": len(state.get("reflection_memory", [])),
+                "entities_count": len(state.get("discovered_entities", {})),
+                "red_flags_count": len(state.get("risk_indicators", {}).get("red_flags", []))
             })
-            queries = await query_generator.refine_queries(
+            
+            queries = await query_generator.generate_refined_queries(
                 subject=state["subject"],
-                discovered_entities=state.get("entities", []),
-                discovered_facts=state.get("facts", []),
-                current_depth=current_depth,
-                next_steps=state.get("next_steps"),
-                information_gaps=state.get("information_gaps"),
-                red_flags=state.get("red_flags"),
-                connections=state.get("connections"),
-                risk_assessment=state.get("risk_assessment")
+                reflection_memory=state.get("reflection_memory", []),
+                queries_executed=state.get("queries_executed", []),
+                discovered_entities=state.get("discovered_entities", {}),
+                current_depth=current_depth
             )
         
         # Log generated queries
-        logger.log_search_queries(queries, f"Depth {current_depth}")
+        logger.log_info(f"Generated {len(queries)} queries for depth {current_depth}", {
+            "queries": queries
+        })
         
-        # Add to pending queries
+        # Update state
         state["pending_queries"] = queries
-        
-        # Increment depth
-        state["current_depth"] = current_depth + 1
         
         # Increment iteration counter for safety
         state["iteration_count"] = state.get("iteration_count", 0) + 1

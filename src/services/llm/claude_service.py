@@ -7,6 +7,7 @@ from typing import List, Optional, Type
 from anthropic import AsyncAnthropic, transform_schema
 from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel
+from ...observability.detailed_logger import DetailedLogger
 
 from ...config.settings import settings
 
@@ -24,15 +25,8 @@ class ClaudeService:
         self.model = settings.claude_model
         self.session_id = session_id
         
-        # Lazy import to avoid circular dependency
-        self._logger = None
-    
-    def _get_logger(self):
-        """Get logger instance (lazy loaded)."""
-        if self._logger is None and self.session_id:
-            from ...observability.detailed_logger import DetailedLogger
-            self._logger = DetailedLogger(self.session_id)
-        return self._logger
+        # Initialize logger if session_id is provided
+        self._logger = DetailedLogger(session_id) if session_id else None
     
     async def extract_structured(
         self,
@@ -60,6 +54,7 @@ class ClaudeService:
             temperature=0.1,
             max_tokens=16384,
             max_retries=2,
+            timeout=10000,
         )
         
         messages = [
@@ -67,18 +62,42 @@ class ClaudeService:
             ("human", text + "\n\n" + (instruction or "")),
         ]
         
-        structured_model = model.with_structured_output(schema, method="json_schema")
-        result: schema = structured_model.invoke(messages)
-        duration_ms = (time.time() - start_time) * 1000
+        print("🚀 1")
         
-        # log the result
-        self._logger.log_llm_call(
-            operation="extract_structured",
-            model=self.model,
-            input_data={"text": text, "schema": schema, "instruction": instruction, "system_prompt": system_prompt},
-            output_data=result.model_dump(),
-            duration_ms=duration_ms,
-        )
+        try:
+            structured_model = model.with_structured_output(schema, method="json_schema")
+            result: schema = structured_model.invoke(messages)
+            duration_ms = (time.time() - start_time) * 1000
+        except Exception as e:
+            print(f"🚀 [Claude] Exception in extract_structured: {e}")
+            raise e
+        
+        print(f"🚀 2 {result}")
+        
+        # print log values before logging for extra visibility
+        print("🔍 Claude Extract Structured Log Information:")
+        print(f"  - operation: extract_structured")
+        print(f"  - model: {self.model}")
+        print(f"  - input_data:")
+        print(f"      text: {text}")
+        print(f"      schema: {schema}")
+        print(f"      instruction: {instruction}")
+        # Truncate system_prompt for display if too long
+        max_prompt_chars = 50
+        sys_prompt_display = (system_prompt[:max_prompt_chars] + "...") if system_prompt and len(system_prompt) > max_prompt_chars else system_prompt
+        print(f"      system_prompt: {sys_prompt_display}")
+        print(f"  - output_data: {result.model_dump()}")
+        print(f"  - duration_ms: {duration_ms}")
+
+        # Log LLM call if logger is available
+        if self._logger:
+            self._logger.log_llm_call(
+                operation="extract_structured",
+                model=self.model,
+                input_data={"text": text, "schema": schema, "instruction": instruction, "system_prompt": system_prompt},
+                output_data=result.model_dump(),
+                duration_ms=duration_ms,
+            )
         
         # use red emoji to indicate that the response is structured
         print("2.😄################################################################################")

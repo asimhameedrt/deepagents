@@ -14,6 +14,8 @@ from .utils.helpers import generate_session_id, format_duration
 from .observability.audit_logger import AuditLogger
 from langfuse import Langfuse, get_client
 from langfuse.langchain import CallbackHandler
+from dotenv import load_dotenv
+load_dotenv()
 
 class DeepResearchAgent:
     """Main agent class for conducting deep research."""
@@ -56,24 +58,12 @@ class DeepResearchAgent:
         # Generate session ID
         session_id = generate_session_id()
         
-        # Initialize state
+        # Initialize state (minimal - initialize node will set defaults)
         initial_state: AgentState = {
             "session_id": session_id,
             "subject": subject,
             "subject_context": context,
-            "current_depth": 0,
             "max_depth": max_depth or settings.max_search_depth,
-            "queries_executed": [],
-            "pending_queries": [],
-            "should_continue": True,
-            "termination_reason": None,
-            "start_time": datetime.utcnow(),
-            "search_count": 0,
-            "extraction_count": 0,
-            "error_count": 0,
-            "iteration_count": 0,
-            "search_iterations": [],  # For audit trail
-            "messages": []
         }
         
         # Log session start
@@ -108,8 +98,51 @@ class DeepResearchAgent:
             
             final_state = await self.graph.ainvoke(initial_state, config=config)
             
-            # # Extract report
-            # report = final_state.get("report")
+            # Extract report
+            report = final_state.get("final_report")
+            
+            # Calculate duration
+            duration = format_duration(
+                (datetime.utcnow() - final_state["start_time"]).total_seconds()
+            )
+            
+            # Log session complete
+            self.audit_logger.log("session_complete", {
+                "session_id": session_id,
+                "subject": subject,
+                "duration": duration,
+                "total_queries": len(final_state.get("queries_executed", [])),
+                "confidence_score": final_state.get("confidence_score", 0.0),
+                "risk_level": report.get("risk_level", "UNKNOWN") if report else "UNKNOWN",
+                "termination_reason": final_state.get("termination_reason")
+            })
+            
+            # Print summary
+            print(f"\n{'='*80}")
+            print(f"✅ Research Complete")
+            print(f"{'='*80}")
+            print(f"Duration: {duration}")
+            print(f"Total Queries: {len(final_state.get('queries_executed', []))}")
+            print(f"Total Sources: {sum(s.get('sources_found', 0) for s in final_state.get('search_iterations', []))}")
+            print(f"Confidence Score: {final_state.get('confidence_score', 0.0):.2f}")
+            if report:
+                print(f"Risk Level: {report.get('risk_level', 'UNKNOWN')}")
+                print(f"Red Flags: {len(report.get('red_flags', []))}")
+                print(f"Report saved: {settings.reports_dir}/{session_id}_report.json")
+            print(f"{'='*80}\n")
+            
+            return {
+                "session_id": session_id,
+                "success": True,
+                "report": report,
+                "duration": duration,
+                "metrics": {
+                    "queries": len(final_state.get("queries_executed", [])),
+                    "sources": sum(s.get("sources_found", 0) for s in final_state.get("search_iterations", [])),
+                    "confidence": final_state.get("confidence_score", 0.0),
+                    "depth": final_state.get("current_depth", 0)
+                }
+            }
                 
         except Exception as e:
             error_msg = f"Error during research: {e}"

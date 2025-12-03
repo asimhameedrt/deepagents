@@ -2,6 +2,7 @@
 
 import json
 import functools
+import inspect
 from datetime import datetime
 from typing import Any, Callable, Dict, Optional
 
@@ -243,6 +244,54 @@ class DetailedLogger:
             print(f"    Score: {risk_assessment.overall_score}")
             print(f"    Red Flags: {len(risk_assessment.red_flags)}")
     
+    def log_info(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log an informational message.
+        
+        Args:
+            message: Info message
+            data: Optional additional data
+        """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
+        log_data = {
+            "message": message,
+            "file": filename,
+            "line": line_number
+        }
+        if data:
+            log_data.update(data)
+        
+        self.log("info", log_data)
+        print(f"  INFO [{filename.split('/')[-1]}:{line_number}]: {message}")
+    
+    def log_warning(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log a warning message.
+        
+        Args:
+            message: Warning message
+            data: Optional additional data
+        """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
+        log_data = {
+            "message": message,
+            "file": filename,
+            "line": line_number
+        }
+        if data:
+            log_data.update(data)
+        
+        self.log("warning", log_data)
+        print(f"  ⚠️  WARNING [{filename.split('/')[-1]}:{line_number}]: {message}")
+    
     def log_error(self, operation: str, error: Exception, context: Dict[str, Any]) -> None:
         """Log an error.
         
@@ -251,14 +300,22 @@ class DetailedLogger:
             error: The exception
             context: Additional context
         """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
         self.log("error", {
             "operation": operation,
             "error_type": type(error).__name__,
             "error_message": str(error),
-            "context": context
+            "context": context,
+            "file": filename,
+            "line": line_number
         })
         
-        print(f"  ERROR in {operation}: {type(error).__name__}: {error}")
+        print(f"  ❌ ERROR [{filename.split('/')[-1]}:{line_number}] in {operation}: {type(error).__name__}: {error}")
     
     def log_report_generated(self, report: Any) -> None:
         """Log report generation.
