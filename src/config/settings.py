@@ -31,16 +31,6 @@ class Settings(BaseSettings):
     min_confidence_threshold: float
     max_concurrent_searches: int
     
-    # Confidence Calculation Configuration
-    # Weighted average formula: confidence_score = sum(component * weight)
-    # Components: finding_confidence, source_credibility, gap_coverage, cross_validation
-    # Adjust these weights to change how confidence is calculated
-    confidence_threshold: float = 0.85  # Stop research when this confidence level is reached
-    confidence_weight_findings: float = 0.4  # Weight for finding confidence
-    confidence_weight_sources: float = 0.3  # Weight for source credibility
-    confidence_weight_gaps: float = 0.2  # Weight for gap coverage
-    confidence_weight_validation: float = 0.1  # Weight for cross-validation
-    
     # Termination Control Configuration
     stagnation_check_iterations: int = 2  # Stop if no new entities in last N iterations
     

@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import List
 from pydantic import BaseModel, Field
 
 from ...models.state import AgentState
@@ -10,6 +10,12 @@ from ...config.settings import settings
 from ...services.llm.openai_service import OpenAIService
 from ...observability.detailed_logger import log_node_execution, DetailedLogger
 from agents import Agent, ModelSettings, Runner, RunConfig
+
+
+class RedFlag(BaseModel):
+    """Individual red flag with severity and detail."""
+    severity: str = Field(description="Severity level: CRITICAL, HIGH, MEDIUM, LOW")
+    detail: str = Field(description="Detailed description of the red flag")
 
 
 class DueDiligenceReport(BaseModel):
@@ -27,7 +33,7 @@ class DueDiligenceReport(BaseModel):
     behavioral_patterns: str = Field(description="Decision-making patterns, associations, conduct")
     
     # Risk assessment
-    red_flags: List[Dict[str, Any]] = Field(description="Critical red flags with details")
+    red_flags: List[RedFlag] = Field(description="Critical red flags with severity and details")
     neutral_facts: List[str] = Field(description="Neutral factual findings")
     positive_indicators: List[str] = Field(description="Positive achievements and indicators")
     
@@ -76,23 +82,9 @@ Termination Reason: {state.get('termination_reason', 'N/A')}
     prompt += "\n## Research Findings (All Iterations)\n\n"
     for i, reflection in enumerate(reflection_memory):
         prompt += f"### Iteration {i}\n"
-        
-        new_findings = reflection.get("new_findings", [])
-        if new_findings:
-            prompt += "**New Findings:**\n"
-            for finding in new_findings[:10]:  # Limit for prompt size
-                prompt += f"- {finding}\n"
-        
-        red_flags = reflection.get("red_flags", [])
-        if red_flags:
-            prompt += "\n**Red Flags:**\n"
-            for rf in red_flags[:5]:
-                if isinstance(rf, dict):
-                    prompt += f"- [{rf.get('severity', 'unknown').upper()}] {rf.get('finding', 'N/A')} (confidence: {rf.get('confidence', 0):.2f})\n"
-                else:
-                    prompt += f"- {rf}\n"
-        
-        prompt += "\n"
+        prompt += f"**Analysis Summary:**\n{reflection.get('analysis_summary', 'No analysis available')}\n\n"
+        prompt += f"**Decision:** {'Continue' if reflection.get('should_continue') else 'Stop'}\n"
+        prompt += f"**Reasoning:** {reflection.get('reasoning', 'N/A')}\n\n"
     
     # Add entity graph summary
     if entity_graph.get("nodes"):

@@ -24,13 +24,17 @@ Added new fields for reflection and entity tracking:
 ### 2. **New Pydantic Schemas** (`src/models/search_result.py`)
 
 #### ReflectionOutput Schema
-Structured output for Claude's reflection analysis:
-- Key findings summary (findings, entities, relationships)
-- Gap analysis (identified, searched, unfillable)
-- Risk categorization (red_flags with severity, neutral, positive)
-- Decision making (should_continue, reasoning, confidence)
-- Query strategy (priority_topics, suggested_angles)
-- Source credibility assessment
+**Optimized for fast Claude processing:**
+- `analysis_summary: str` - Structured text containing:
+  - Key findings (all categories: biographical, financial, legal, etc.)
+  - Entities discovered
+  - Relationships in format: `(subject) --relation--> (object)`
+  - Risk assessment (RED FLAGS/NEUTRAL/POSITIVE with severity)
+  - Gap analysis (identified, searched, unfillable)
+  - Source credibility notes
+- `should_continue: bool` - Continue or stop decision
+- `reasoning: str` - Decision reasoning
+- `query_strategy: str` - Textual priorities and angles for next iteration
 
 #### ConnectionMappingOutput Schema
 Structured output for OpenAI's connection mapping:
@@ -42,19 +46,14 @@ Structured output for OpenAI's connection mapping:
 
 Added configurable parameters:
 ```python
-# Confidence Calculation (weighted formula)
-confidence_threshold: float = 0.85
-confidence_weight_findings: float = 0.4
-confidence_weight_sources: float = 0.3
-confidence_weight_gaps: float = 0.2
-confidence_weight_validation: float = 0.1
-
 # Termination Control
-stagnation_check_iterations: int = 2
+stagnation_check_iterations: int = 2  # No new entities in N iterations
 
 # Cross-validation
-enable_model_cross_validation: bool = False
+enable_model_cross_validation: bool = False  # Optional dual-model validation
 ```
+
+**Removed:** Confidence calculation settings (simplified for performance)
 
 ### 4. **Utility Functions** (`src/utils/research_utils.py`)
 
@@ -235,15 +234,19 @@ User Input (subject + context)
 
 ---
 
-## Model Allocation
+## Model Allocation (Optimized for Performance ⚡)
 
-| Task | Model | Rationale |
-|------|-------|-----------|
-| Query Generation | Claude Sonnet 4 | Superior reasoning for strategic query planning |
-| Web Search | OpenAI GPT-4o | Native WebSearchTool integration |
-| Reflection & Analysis | Claude Sonnet 4 | Deep analytical reasoning for risk assessment |
-| Connection Mapping | OpenAI GPT-4o | Structured output for graph construction |
-| Report Synthesis | OpenAI GPT-4o | Comprehensive long-form generation |
+| Task | Model | Schema Type | Why |
+|------|-------|-------------|-----|
+| Query Generation | Claude Sonnet 4 | Simple (list) | Strategic reasoning |
+| Web Search | OpenAI GPT-4o | Structured | Native WebSearchTool |
+| **Reflection** | **Claude Sonnet 4** | **Simple (text)** | **Fast, no API failures** |
+| **Entity Merge** | **OpenAI GPT-4o** | **Structured** | **Fast extraction + merge** |
+| **Graph Merge** | **OpenAI GPT-4o** | **Structured** | **Reliable graph ops** |
+| Connection Mapping | OpenAI GPT-4o | Structured | Pattern detection |
+| Report Synthesis | OpenAI GPT-4o | Structured | Comprehensive output |
+
+**Key Optimization:** Claude = simple schemas (fast), OpenAI = structured data (reliable)
 
 ---
 
@@ -252,9 +255,10 @@ User Input (subject + context)
 Research stops when ANY of these conditions is met:
 
 1. **Max depth reached** (`current_depth >= max_depth`)
-2. **Confidence threshold met** (`confidence_score >= 0.85`)
-3. **Reflection recommends stop** (`reflection.should_continue == False`)
-4. **No new queries** (after refinement produces no pending queries)
+2. **Reflection recommends stop** (`reflection.should_continue == False`)
+3. **No new queries** (after refinement produces no pending queries)
+
+**Removed:** Confidence threshold check (simplified for performance)
 
 **Stagnation detection** triggers connection mapping:
 - If no new entities in last N iterations (default: 2)
@@ -277,21 +281,15 @@ Research stops when ANY of these conditions is met:
 - Builds relationship graph
 
 ### 3. **Source Credibility Assessment**
-- LLM evaluates each source (0-1 scale)
-- High: Government, verified databases, major news (0.8-1.0)
-- Medium: Established blogs, company sites (0.5-0.8)
-- Low: Social media, forums, unverified (0.2-0.5)
+- Mentioned in `analysis_summary` text
+- Notes on source quality (high/medium/low)
+- Used for context, not calculated scoring
 
-### 4. **Confidence Scoring**
-Transparent weighted formula:
-```
-confidence = 
-  0.4 * finding_confidence +
-  0.3 * source_credibility +
-  0.2 * gap_coverage +
-  0.1 * cross_validation
-```
-All weights configurable in `.env`
+### 4. **Simplified Processing** ⚡
+- **Removed confidence calculation** (faster reflection)
+- **Text-based analysis** (Claude processes quickly)
+- **OpenAI for structured data** (entity/graph operations)
+- **Natural language strategy** (flexible query refinement)
 
 ### 5. **Pattern Detection**
 - Identifies overlapping relationships
@@ -316,18 +314,13 @@ MAX_SEARCH_DEPTH=5
 MAX_QUERIES_PER_DEPTH=10
 MAX_CONCURRENT_SEARCHES=5
 
-# Confidence Calculation (adjustable weights)
-CONFIDENCE_THRESHOLD=0.85
-CONFIDENCE_WEIGHT_FINDINGS=0.4
-CONFIDENCE_WEIGHT_SOURCES=0.3
-CONFIDENCE_WEIGHT_GAPS=0.2
-CONFIDENCE_WEIGHT_VALIDATION=0.1
-
 # Termination Control
-STAGNATION_CHECK_ITERATIONS=2
+STAGNATION_CHECK_ITERATIONS=2  # Switch to connection mapping if stagnant
 
 # Cross-validation (optional)
-ENABLE_MODEL_CROSS_VALIDATION=false
+ENABLE_MODEL_CROSS_VALIDATION=false  # Use both models for validation
+
+# Removed: Confidence calculation settings (simplified)
 ```
 
 ---

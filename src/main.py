@@ -112,7 +112,6 @@ class DeepResearchAgent:
                 "subject": subject,
                 "duration": duration,
                 "total_queries": len(final_state.get("queries_executed", [])),
-                "confidence_score": final_state.get("confidence_score", 0.0),
                 "risk_level": report.get("risk_level", "UNKNOWN") if report else "UNKNOWN",
                 "termination_reason": final_state.get("termination_reason")
             })
@@ -124,7 +123,7 @@ class DeepResearchAgent:
             print(f"Duration: {duration}")
             print(f"Total Queries: {len(final_state.get('queries_executed', []))}")
             print(f"Total Sources: {sum(s.get('sources_found', 0) for s in final_state.get('search_iterations', []))}")
-            print(f"Confidence Score: {final_state.get('confidence_score', 0.0):.2f}")
+            print(f"Total Entities: {len(final_state.get('discovered_entities', {}))}")
             if report:
                 print(f"Risk Level: {report.get('risk_level', 'UNKNOWN')}")
                 print(f"Red Flags: {len(report.get('red_flags', []))}")
@@ -139,7 +138,7 @@ class DeepResearchAgent:
                 "metrics": {
                     "queries": len(final_state.get("queries_executed", [])),
                     "sources": sum(s.get("sources_found", 0) for s in final_state.get("search_iterations", [])),
-                    "confidence": final_state.get("confidence_score", 0.0),
+                    "entities": len(final_state.get("discovered_entities", {})),
                     "depth": final_state.get("current_depth", 0)
                 }
             }

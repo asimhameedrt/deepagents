@@ -1,4 +1,4 @@
-# Quick Start Guide: Enhanced Deep Research Agent
+# Quick Start Guide: Enhanced Deep Research Agent (Optimized ⚡)
 
 ## 🚀 Get Started in 3 Steps
 
@@ -63,36 +63,37 @@ Edit `.env` to customize:
 MAX_SEARCH_DEPTH=5                    # How many iterations?
 MAX_QUERIES_PER_DEPTH=10              # Queries per iteration?
 
-# When to stop (confidence threshold)
-CONFIDENCE_THRESHOLD=0.85             # Stop when 85% confident
+# Stagnation detection (switch to connection mapping)
+STAGNATION_CHECK_ITERATIONS=2         # If no progress in N iterations
 
-# Confidence calculation weights (must sum to 1.0)
-CONFIDENCE_WEIGHT_FINDINGS=0.4        # Weight of finding confidence
-CONFIDENCE_WEIGHT_SOURCES=0.3         # Weight of source credibility
-CONFIDENCE_WEIGHT_GAPS=0.2            # Weight of gap coverage
-CONFIDENCE_WEIGHT_VALIDATION=0.1      # Weight of cross-validation
-
-# Stagnation detection
-STAGNATION_CHECK_ITERATIONS=2         # Stop if no new entities in N iterations
+# Termination
+# - Max depth reached
+# - Reflection recommends stop
+# - No new queries generated
 ```
+
+**Simplified:** No confidence calculation (faster Claude processing)
 
 ---
 
 ## 🔍 Understanding the Workflow
 
-### Iteration Cycle:
+### Iteration Cycle (Optimized ⚡):
 
 ```
-1. GENERATE QUERIES (Claude)
-   ↓ Uses reflection to prioritize red flags
+1. GENERATE QUERIES (Claude - Fast)
+   ↓ Textual strategy from reflection
    
 2. EXECUTE SEARCHES (OpenAI)
    ↓ Parallel web searches with sources
    
-3. ANALYZE & REFLECT (Claude)
-   ↓ Extract entities, assess risks, calculate confidence
+3. ANALYZE & REFLECT (Claude - Simple Schema)
+   ↓ Structured text analysis (fast processing)
    
-4. DECISION POINT
+4. MERGE ENTITIES (OpenAI - Structured)
+   ↓ Extract from text + deduplicate
+   
+5. DECISION POINT
    ├─ Continue? → Back to step 1
    ├─ Stagnation? → Map connections
    └─ Done? → Synthesize report
@@ -100,30 +101,27 @@ STAGNATION_CHECK_ITERATIONS=2         # Stop if no new entities in N iterations
 
 ### Stopping Conditions:
 - ✋ Max depth reached
-- ✋ Confidence threshold met (e.g., 85%)
 - ✋ Reflection recommends stop
 - ✋ No new queries generated
 
+**Removed:** Confidence threshold (simplified for speed)
+
 ---
 
-## 📈 Confidence Score Explained
+## ⚡ Performance Optimizations
 
-**Formula:**
-```
-Confidence = 
-  40% × Finding Confidence +
-  30% × Source Credibility +
-  20% × Gap Coverage +
-  10% × Cross-Validation
-```
+**Simplified Schemas:**
+- Claude uses **text-based outputs** (fast processing)
+- OpenAI handles **structured data** (entity/graph operations)
+- No complex nested structures in Claude (no API failures)
 
-**Example:**
-- High-confidence red flags: 0.9
-- Credible sources (govt, news): 0.8
-- 70% of gaps filled: 0.7
-- 80% corroborated facts: 0.8
+**Entity Extraction:**
+- Claude mentions entities in analysis text
+- OpenAI extracts and merges them (fast, reliable)
 
-→ **Confidence = 0.9×0.4 + 0.8×0.3 + 0.7×0.2 + 0.8×0.1 = 0.82**
+**Query Strategy:**
+- Natural language priorities (flexible)
+- Parsed by Claude for refinement
 
 ---
 
@@ -167,11 +165,11 @@ cat .env | grep API_KEY
 ```
 
 ### Issue: Research stops too early
-**Solution:** Lower confidence threshold or increase max depth
+**Solution:** Increase max depth or adjust stagnation iterations
 ```bash
 # In .env
-CONFIDENCE_THRESHOLD=0.75
 MAX_SEARCH_DEPTH=7
+STAGNATION_CHECK_ITERATIONS=3
 ```
 
 ### Issue: Too many queries per iteration
@@ -185,22 +183,7 @@ MAX_QUERIES_PER_DEPTH=5
 
 ## 📖 Advanced Features
 
-### 1. Adjust Confidence Weights
-Prioritize different aspects:
-
-**Prioritize source quality:**
-```bash
-CONFIDENCE_WEIGHT_SOURCES=0.5
-CONFIDENCE_WEIGHT_FINDINGS=0.3
-```
-
-**Prioritize gap coverage:**
-```bash
-CONFIDENCE_WEIGHT_GAPS=0.4
-CONFIDENCE_WEIGHT_FINDINGS=0.4
-```
-
-### 2. Stagnation Control
+### 1. Stagnation Control
 Control when to switch from search to analysis:
 
 ```bash
@@ -211,7 +194,7 @@ STAGNATION_CHECK_ITERATIONS=1
 STAGNATION_CHECK_ITERATIONS=3
 ```
 
-### 3. Enable Model Cross-Validation
+### 2. Enable Model Cross-Validation
 Use both Claude and OpenAI for critical decisions:
 
 ```bash
@@ -256,7 +239,7 @@ Max depth: 5
 Duration: 5m 23s
 Total Queries: 25
 Total Sources: 142
-Confidence Score: 0.87
+Total Entities: 28
 Risk Level: CRITICAL
 Red Flags: 15
 Report saved: reports/sess_20251203_120000_report.json
@@ -268,7 +251,7 @@ Report saved: reports/sess_20251203_120000_report.json
 {
   "metadata": {
     "subject": "Sam Bankman-Fried",
-    "confidence_score": 0.87,
+    "research_depth": 3,
     "risk_level": "CRITICAL"
   },
   "executive_summary": "...",

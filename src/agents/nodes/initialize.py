@@ -69,7 +69,6 @@ async def initialize_session(state: AgentState) -> AgentState:
             "neutral": [],
             "positive": []
         },
-        "confidence_score": 0.0,
     }
     
     # Apply defaults (don't override if already set)
@@ -81,7 +80,7 @@ async def initialize_session(state: AgentState) -> AgentState:
         "session_id": session_id,
         "subject": state["subject"],
         "max_depth": state["max_depth"],
-        "confidence_threshold": settings.confidence_threshold,
+        "confidence_threshold": settings.min_confidence_threshold,
         "stagnation_check_iterations": settings.stagnation_check_iterations
     })
     

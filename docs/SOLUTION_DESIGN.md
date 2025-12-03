@@ -14,8 +14,8 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 **Workflow Orchestration**: LangGraph state machine with typed state management
 
 **Multi-Agent Pattern**: Specialized agents for different cognitive tasks:
-- **OpenAI GPT-4o**: Information retrieval, web search, entity extraction
-- **Claude Sonnet 4**: Risk analysis, pattern recognition, report synthesis
+- **Claude Sonnet 4**: Reflection analysis (simple schemas for speed), query generation
+- **OpenAI GPT-4o**: Web search, entity extraction/merging (structured output), connection mapping, report synthesis
 
 **State Management**: Centralized `AgentState` TypedDict maintains all research progress, metrics, and discoveries across workflow nodes.
 
@@ -34,13 +34,16 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 **OpenAI Service** (`src/services/llm/openai_service.py`)
 - Uses OpenAI Agents SDK with WebSearchTool
 - Structured output via Pydantic schemas
-- Handles: web search execution, query generation
-- Returns: `WebSearchOutput` with sources, memory summaries, comprehensive reports
+- Handles: web search execution, entity merging, graph merging, connection mapping
+- Returns: `WebSearchOutput`, `EntityMergeOutput`, `GraphMergeOutput`, `ConnectionMappingOutput`
+- Fast and reliable for complex structured outputs
 
 **Claude Service** (`src/services/llm/claude_service.py`)
 - Structured extraction using Claude's beta API
-- Currently implements: generic structured extraction
-- Designed for: risk analysis, connection mapping, report synthesis
+- Optimized for simple schemas (text-heavy outputs)
+- Handles: reflection analysis, query generation
+- Returns: `ReflectionOutput` (simplified), `SearchQueriesList`
+- Fast processing with minimal structured complexity
 
 #### 3.3 State Models (`src/models/state.py`)
 
@@ -48,7 +51,9 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 - Session tracking: `session_id`, `subject`, `subject_context`
 - Progress: `current_depth`, `max_depth`, `queries_executed`
 - Control flow: `should_continue`, `termination_reason`
-- Memory: `search_memory` (list of search iteration summaries)
+- Memory: `search_memory` (list of search iteration summaries), `reflection_memory` (reflection outputs)
+- Entity tracking: `discovered_entities` (merged entities), `entity_graph` (nodes + edges)
+- Risk assessment: `risk_indicators` (red_flags, neutral, positive)
 - Audit: `search_iterations` (detailed audit trail)
 - Metrics: search count, error count, iteration count
 
@@ -59,10 +64,11 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 
 #### 3.4 Search Strategy (`src/services/search/`)
 
-**QueryGenerator**: Currently simplified
-- Initial queries: basic subject + context
-- Refinement: designed for depth-based query evolution (not fully implemented)
-- Deduplication: tracks generated queries
+**QueryGenerator**: Claude-based strategy
+- Initial queries: Broad biographical, professional, financial, legal coverage
+- Refinement: Uses textual `query_strategy` from reflection
+- Parses natural language priorities to generate targeted queries
+- Deduplication: avoids queries in `queries_executed`
 
 **SearchExecutor** (`src/services/search/web_search.py`)
 - Parallel search execution via asyncio
@@ -76,39 +82,63 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 #### Node Pipeline
 
 1. **Initialize** (`initialize.py`): Session setup, state initialization
-2. **Generate Queries** (`generate_queries.py`): 
-   - Depth 0: Simple initial query
-   - Depth N: Intended to use search memory for refinement
-3. **Execute Search** (`web_search.py`):
-   - Parallel searches via OpenAI Agents SDK
+2. **Generate Queries** (`generate_queries.py`) - **Claude**: 
+   - Depth 0: Broad queries (biographical, professional, financial, legal)
+   - Depth N: Uses textual `query_strategy` from reflection for refinement
+3. **Execute Search** (`web_search.py`) - **OpenAI**:
+   - Parallel searches via OpenAI Agents SDK with WebSearchTool
    - Collects sources and search summaries
-   - Updates audit trail
-4. **Analyze and Reflect** (`analyze.py`): Placeholder for analysis and reflection
-5. **Map Connections** (`connect.py`): Placeholder for relationship mapping
-6. **Synthesize Report** (`synthesize.py`): Final report generation
+   - Updates search_memory
+4. **Analyze and Reflect** (`analyze.py`) - **Claude**:
+   - Simplified schema for fast processing
+   - Outputs: `analysis_summary` (structured text), `should_continue`, `reasoning`, `query_strategy`
+   - Text includes: findings, entities, relationships, risk assessment, gaps, source notes
+5. **Merge Entities** (utility function) - **OpenAI**:
+   - Extracts entities from `analysis_summary` text
+   - Merges with existing entities, handles deduplication
+6. **Map Connections** (`connect.py`) - **OpenAI**:
+   - Builds entity graph (nodes + edges)
+   - Identifies patterns, flags suspicious connections
+   - Assesses entity importance
+7. **Synthesize Report** (`synthesize.py`) - **OpenAI**:
+   - Comprehensive due diligence report
+   - 18 sections including risk assessment, entity analysis, recommendations
 
 #### Conditional Routing (`src/agents/edges/routing.py`)
 
-**Decision Points** (placeholder implementations):
-- `should_continue_research`: continue_search / analyze / finish
-- `has_new_queries`: search_more / synthesize
-- `needs_deeper_research`: refine / synthesize
+**Decision Points** (fully implemented):
+- `should_continue_research`: 
+  - Checks: max_depth, reflection decision, stagnation
+  - Routes to: continue_search / analyze / finish
+- `has_new_queries`: 
+  - Checks if pending_queries exist after refinement
+  - Routes to: search_more / synthesize
+- `needs_deeper_research`: (Optional, not currently used in main flow)
 
 ---
 
-### 5. Multi-Model Strategy
+### 5. Multi-Model Strategy (Optimized)
 
 **Division of Labor**:
 
-| Task | Model | Rationale |
-|------|-------|-----------|
-| Web Search & Extraction | OpenAI GPT-4o | Native web search tool, fast structured output |
-| Risk Analysis | Claude Sonnet 4 | Superior reasoning for complex pattern recognition |
-| Report Synthesis | Claude Sonnet 4 | Comprehensive long-form generation |
+| Task | Model | Schema Type | Rationale |
+|------|-------|-------------|-----------|
+| Query Generation | Claude Sonnet 4 | Simple (list) | Strategic reasoning, natural language |
+| Web Search | OpenAI GPT-4o | Structured | Native web search tool |
+| Reflection Analysis | Claude Sonnet 4 | **Simple (text-heavy)** | **Fast processing with minimal structure** |
+| Entity Merging | OpenAI GPT-4o | Structured | Reliable extraction + deduplication |
+| Graph Merging | OpenAI GPT-4o | Structured | Fast graph operations |
+| Connection Mapping | OpenAI GPT-4o | Structured | Pattern detection, graph building |
+| Report Synthesis | OpenAI GPT-4o | Structured | Comprehensive long-form generation |
+
+**Optimization Strategy**:
+- **Claude**: Simple schemas (mostly text) → Fast, reliable
+- **OpenAI**: Complex structured outputs → No failures, good performance
+- **Key Insight**: Claude excels with simple schemas, OpenAI handles complex structures better
 
 **Structured Output**:
-- OpenAI: Uses Agents SDK with Pydantic output types
-- Claude: Beta structured outputs API (`beta.messages.parse`)
+- OpenAI: Uses Agents SDK with Pydantic output types (complex schemas)
+- Claude: Beta structured outputs API with simplified schemas (text-heavy)
 
 ---
 
@@ -132,30 +162,29 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 
 ### 7. Current Implementation State
 
-#### ✅ Implemented
+#### ✅ Fully Implemented
 - LangGraph workflow structure with 7 nodes
 - OpenAI web search integration via Agents SDK
+- **Claude reflection with simplified schema (fast, reliable)**
+- **OpenAI entity extraction and merging (structured)**
+- **OpenAI graph construction and merging**
+- **Connection mapping with pattern detection**
+- Query refinement using textual strategy
+- Intelligent routing (3 decision functions)
+- **Comprehensive report synthesis**
 - Search memory collection from searches
-- Structured output schemas (WebSearchOutput, SearchQueriesList)
+- Structured output schemas (simplified for performance)
 - Session management and state tracking
 - Audit logging infrastructure
 - Configuration management via Pydantic Settings
 - Parallel search execution
 
-#### 🚧 Partial/Placeholder
-- Query refinement logic (simplified to basic queries)
-- Risk analysis node (empty implementation)
-- Connection mapping (empty implementation)
-- Report synthesis (basic structure only)
-- Conditional routing logic (functions defined but not implemented)
-
-#### ❌ Not Implemented
-- Claude-based analysis operations
-- Connection graph construction
-- Source classification and confidence scoring
-- Red flag detection system
-- Depth-based search strategies
-- Final report generation with EDD sections
+#### ⚡ Performance Optimizations
+- Simplified Claude schemas for speed (text-based)
+- OpenAI for all complex structured outputs
+- No confidence calculation overhead
+- Textual query strategy (natural language)
+- Entity extraction during merge (not reflection)
 
 ---
 

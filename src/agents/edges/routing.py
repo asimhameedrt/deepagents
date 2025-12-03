@@ -17,10 +17,13 @@ def should_continue_research(state: AgentState) -> str:
     
     Decision criteria (checked in order):
     1. Max depth reached → finish
-    2. Confidence threshold met → finish
-    3. Reflection recommends stop → finish
-    4. Stagnation detected (no new entities in N iterations) → analyze
-    5. Otherwise → continue_search
+    2. Reflection recommends stop → finish
+    3. Stagnation detected (no new entities in N iterations) → analyze
+    4. Otherwise → continue_search
+    
+    Note: Depth is incremented in the analyze_and_reflect node BEFORE this routing
+    function is called. This ensures depth is correct when checking limits.
+    Example: max_depth=3 → iterations run at depths 0, 1, 2 (total 3 iterations).
     
     Args:
         state: Current agent state
@@ -31,6 +34,8 @@ def should_continue_research(state: AgentState) -> str:
     logger = DetailedLogger(state.get("session_id", "unknown"))
     
     # 1. Check hard limit: max depth
+    # Note: Depth was already incremented in analyze_and_reflect node
+    # With max_depth=3, we get iterations at depth 0, 1, 2 (total 3 iterations)
     if state["current_depth"] >= state["max_depth"]:
         logger.log_info("Routing decision: FINISH (max depth reached)", {
             "current_depth": state["current_depth"],
@@ -39,16 +44,7 @@ def should_continue_research(state: AgentState) -> str:
         state["termination_reason"] = "max_depth_reached"
         return "finish"
     
-    # 2. Check confidence threshold
-    if state.get("confidence_score", 0.0) >= settings.confidence_threshold:
-        logger.log_info("Routing decision: FINISH (confidence threshold met)", {
-            "confidence_score": state["confidence_score"],
-            "threshold": settings.confidence_threshold
-        })
-        state["termination_reason"] = "confidence_threshold_met"
-        return "finish"
-    
-    # 3. Check reflection decision
+    # 2. Check reflection decision
     reflection_memory = state.get("reflection_memory", [])
     if reflection_memory:
         latest_reflection = reflection_memory[-1]
@@ -61,21 +57,19 @@ def should_continue_research(state: AgentState) -> str:
             state["termination_reason"] = "reflection_recommended_stop"
             return "finish"
     
-    # 4. Check stagnation (no new entities in last N iterations)
+    # 3. Check stagnation (no new entities in last N iterations)
     if check_stagnation(reflection_memory, settings.stagnation_check_iterations):
         logger.log_info("Routing decision: ANALYZE (stagnation detected)", {
-            "stagnation_iterations": settings.stagnation_check_iterations
+            "stagnation_iterations": settings.stagnation_check_iterations,
+            "current_depth": state["current_depth"]
         })
         return "analyze"
     
-    # 5. Continue searching
+    # 4. Continue searching
     logger.log_info("Routing decision: CONTINUE_SEARCH", {
         "current_depth": state["current_depth"],
-        "confidence_score": state.get("confidence_score", 0.0)
+        "next_iteration": state["current_depth"]
     })
-    
-    # Increment depth for next iteration
-    state["current_depth"] += 1
     
     return "continue_search"
 
@@ -106,37 +100,4 @@ def has_new_queries(state: AgentState) -> str:
         logger.log_info("Routing decision: SYNTHESIZE (no new queries)")
         state["termination_reason"] = "no_additional_queries"
         return "synthesize"
-
-
-def needs_deeper_research(state: AgentState) -> str:
-    """
-    Determine if deeper research is needed after initial analysis.
-    
-    NOTE: This function is currently not used in the main graph flow,
-    but kept for potential future use or alternative routing strategies.
-    
-    Args:
-        state: Current agent state
-        
-    Returns:
-        Next node name ("refine", "synthesize")
-    """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
-    
-    # Check if there are unexplored entities or gaps
-    reflection_memory = state.get("reflection_memory", [])
-    if reflection_memory:
-        latest_reflection = reflection_memory[-1]
-        priority_topics = latest_reflection.get("priority_topics", [])
-        
-        if priority_topics:
-            logger.log_info("Routing decision: REFINE (priority topics identified)", {
-                "priority_topics_count": len(priority_topics)
-            })
-            return "refine"
-    
-    # No deeper research needed
-    logger.log_info("Routing decision: SYNTHESIZE (no deeper research needed)")
-    state["termination_reason"] = "research_complete"
-    return "synthesize"
 

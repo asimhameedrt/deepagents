@@ -4,13 +4,15 @@ An autonomous AI agent capable of conducting comprehensive Enhanced Due Diligenc
 
 ## Features
 
-- **Multi-Model AI Architecture**: Uses OpenAI GPT-4.1 for search and Claude Sonnet 4 for analysis
+- **Optimized Multi-Model Architecture** ⚡: Claude (simple schemas, fast) + OpenAI (structured data, reliable)
 - **Consecutive Search Strategy**: Each search builds upon previous findings
-- **Dynamic Query Refinement**: Adapts search strategies based on discovered information
-- **Risk Pattern Recognition**: Identifies red flags across 10 risk categories
-- **Connection Mapping**: Traces relationships between entities and organizations
-- **Source Validation**: Implements tier-based source classification and confidence scoring
+- **Dynamic Query Refinement**: Textual strategy from reflection (flexible, natural language)
+- **Risk Pattern Recognition**: Identifies red flags with severity levels
+- **Connection Mapping**: Traces relationships in format `(subject) --relation--> (object)`
+- **Entity Extraction**: OpenAI extracts and merges entities from analysis text
+- **Graph Construction**: Builds entity graphs with pattern detection
 - **Compliance-Ready Reports**: Generates comprehensive EDD reports with full audit trails
+- **Performance Optimized**: Fast Claude processing, no API failures, reduced token usage
 
 ## Quick Start
 

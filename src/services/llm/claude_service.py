@@ -61,9 +61,7 @@ class ClaudeService:
             ("system", system_prompt),
             ("human", text + "\n\n" + (instruction or "")),
         ]
-        
-        print("🚀 1")
-        
+                
         try:
             structured_model = model.with_structured_output(schema, method="json_schema")
             result: schema = structured_model.invoke(messages)
@@ -72,22 +70,8 @@ class ClaudeService:
             print(f"🚀 [Claude] Exception in extract_structured: {e}")
             raise e
         
-        print(f"🚀 2 {result}")
-        
         # print log values before logging for extra visibility
-        print("🔍 Claude Extract Structured Log Information:")
-        print(f"  - operation: extract_structured")
-        print(f"  - model: {self.model}")
-        print(f"  - input_data:")
-        print(f"      text: {text}")
-        print(f"      schema: {schema}")
-        print(f"      instruction: {instruction}")
-        # Truncate system_prompt for display if too long
-        max_prompt_chars = 50
-        sys_prompt_display = (system_prompt[:max_prompt_chars] + "...") if system_prompt and len(system_prompt) > max_prompt_chars else system_prompt
-        print(f"      system_prompt: {sys_prompt_display}")
-        print(f"  - output_data: {result.model_dump()}")
-        print(f"  - duration_ms: {duration_ms}")
+        print("🔍 Claude Extract Structured Information Logged successfully.")
 
         # Log LLM call if logger is available
         if self._logger:
@@ -98,9 +82,4 @@ class ClaudeService:
                 output_data=result.model_dump(),
                 duration_ms=duration_ms,
             )
-        
-        # use red emoji to indicate that the response is structured
-        print("2.😄################################################################################")
-        print(json.dumps(result.model_dump(), indent=2, ensure_ascii=False))
-        print("😄################################################################################")
         return result.model_dump()

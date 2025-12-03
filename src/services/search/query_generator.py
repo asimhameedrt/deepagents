@@ -88,13 +88,12 @@ Return queries as a JSON list."""
         current_depth: int
     ) -> List[str]:
         """
-        Generate refined queries based on reflection analysis.
+        Generate refined queries based on reflection's query strategy.
         
-        Uses latest reflection to:
+        Uses latest reflection's query_strategy text to:
         - Prioritize red flag topics
         - Explore suggested angles
         - Target new entities
-        - Fill identified gaps
         - Avoid repeating previous queries
         
         Args:
@@ -116,59 +115,43 @@ Return queries as a JSON list."""
         
         system_prompt = """You are an expert research strategist for Enhanced Due Diligence investigations.
 
-Your task is to generate refined search queries based on previous findings and reflection analysis.
+Your task is to generate refined search queries based on the query strategy from reflection analysis.
 
 Key principles:
-1. PRIORITIZE RED FLAGS: Focus on high-severity risks and concerning findings
-2. EXPLORE NEW ENTITIES: Target newly discovered persons, organizations, events
-3. FILL GAPS: Address identified information gaps
-4. FOLLOW SUGGESTED ANGLES: Use strategic directions from reflection
-5. AVOID REPETITION: Do not repeat or closely paraphrase previous queries
-6. BE SPECIFIC: Target concrete facts, not general information
+1. PRIORITIZE RED FLAGS: Focus on high-severity risks mentioned in strategy
+2. EXPLORE NEW ENTITIES: Target entities mentioned in strategy
+3. FOLLOW STRATEGY: Use the provided query strategy as your guide
+4. AVOID REPETITION: Do not repeat or closely paraphrase previous queries
+5. BE SPECIFIC: Target concrete facts, not general information
 
-Generate queries that will uncover deeper intelligence and validate/refute red flags."""
+Generate queries that will uncover deeper intelligence based on the strategy."""
         
-        # Build context from reflection
-        priority_topics = latest_reflection.get("priority_topics", [])
-        suggested_angles = latest_reflection.get("suggested_angles", [])
-        new_entities = latest_reflection.get("new_entities", [])
-        identified_gaps = latest_reflection.get("identified_gaps", [])
-        red_flags = latest_reflection.get("red_flags", [])
+        # Get query strategy from reflection
+        query_strategy = latest_reflection.get("query_strategy", "")
         
         prompt = f"""# Refined Query Generation (Depth {current_depth})
 
 Subject: {subject}
 
-## Previous Findings Summary
+## Query Strategy from Reflection
+{query_strategy}
+
+## Context
 Total Queries Executed: {len(queries_executed)}
 Entities Discovered: {len(discovered_entities)}
-Red Flags: {len(red_flags)}
 
-## Latest Reflection Analysis
-
-### Priority Topics (Red Flags Prioritized)
-{chr(10).join(f"- {topic}" for topic in priority_topics[:10])}
-
-### Suggested Search Angles
-{chr(10).join(f"- {angle}" for angle in suggested_angles[:5])}
-
-### New Entities to Explore
-{chr(10).join(f"- {entity}" for entity in new_entities[:10])}
-
-### Identified Information Gaps
-{chr(10).join(f"- {gap}" for gap in identified_gaps[:5])}
-
-### Recent Queries (AVOID DUPLICATING)
+## Recent Queries (AVOID DUPLICATING)
 {chr(10).join(f"- {q}" for q in queries_executed[-10:])}
 
 ## Your Task
 
-Generate {self.max_queries} NEW search queries that:
-1. Prioritize red flag topics and high-severity issues
-2. Explore newly discovered entities in depth
-3. Fill critical information gaps
-4. Follow suggested angles
-5. DO NOT repeat or closely paraphrase previous queries
+Generate {self.max_queries} NEW search queries based on the query strategy above.
+
+Requirements:
+1. Follow the priority topics and angles from the strategy
+2. Target specific entities, events, or relationships mentioned
+3. DO NOT repeat or closely paraphrase previous queries
+4. Make queries specific and targeted (not generic)
 
 Return as JSON list."""
         

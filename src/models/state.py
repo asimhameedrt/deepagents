@@ -64,7 +64,6 @@ class AgentState(TypedDict):
     
     # Risk Assessment
     risk_indicators: Dict[str, List[str]]  # Categorized findings: red_flags, neutral, positive
-    confidence_score: float  # Overall research confidence (0-1)
     
     # Messages (for LangGraph)
     messages: List[BaseMessage]

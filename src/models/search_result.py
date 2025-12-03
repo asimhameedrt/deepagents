@@ -29,83 +29,48 @@ class SearchQueriesList(BaseModel):
 #=======================================================
 #          Reflection & Analysis Models                 #
 #=======================================================
-class RedFlagItem(BaseModel):
-    """Individual red flag finding with severity and confidence."""
-    finding: str = Field(description="Description of the red flag")
-    severity: str = Field(description="Severity level: critical, high, medium, low")
-    confidence: float = Field(description="Confidence score (0-1)")
-    sources: List[str] = Field(default_factory=list, description="Source names supporting this finding")
-
-class SourceCredibility(BaseModel):
-    """Source credibility assessment."""
-    source: str = Field(description="Source name or title")
-    url: str = Field(description="Source URL")
-    credibility: float = Field(description="Credibility weight (0-1)")
-
 class ReflectionOutput(BaseModel):
-    """Output from reflection and analysis node (Claude)."""
+    """Simplified reflection output from Claude (fast, reliable)."""
     
-    # Key Findings Summary
-    new_findings: List[str] = Field(
-        default_factory=list,
-        description="New facts discovered this iteration"
-    )
-    new_entities: List[str] = Field(
-        default_factory=list,
-        description="Newly discovered entities (persons, organizations, events)"
-    )
-    new_relationships: List[str] = Field(
-        default_factory=list,
-        description="Discovered connections in free-form text"
-    )
-    
-    # Gap Analysis
-    identified_gaps: List[str] = Field(
-        default_factory=list,
-        description="Information gaps identified"
-    )
-    gaps_searched: List[str] = Field(
-        default_factory=list,
-        description="Gaps we attempted to fill this iteration"
-    )
-    gaps_unfillable: List[str] = Field(
-        default_factory=list,
-        description="Gaps with no data found (give up on these)"
-    )
-    
-    # Risk Assessment
-    red_flags: List[RedFlagItem] = Field(
-        default_factory=list,
-        description="Red flag findings with severity and confidence"
-    )
-    neutral_facts: List[str] = Field(
-        default_factory=list,
-        description="Neutral factual findings"
-    )
-    positive_indicators: List[str] = Field(
-        default_factory=list,
-        description="Positive indicators or achievements"
+    # Analysis Summary (Structured Text)
+    analysis_summary: str = Field(
+        description="""Comprehensive analysis in structured text format with sections:
+        
+## Key Findings
+- List of new facts discovered
+
+## Entities Discovered
+- List of persons, organizations, events, locations
+
+## Relationships
+- Format: (subject) --relation--> (object)
+- Example: (Sam Bankman-Fried) --founded--> (FTX)
+
+## Risk Assessment
+RED FLAGS:
+- [SEVERITY] Description of red flag
+NEUTRAL:
+- Neutral factual findings
+POSITIVE:
+- Positive indicators
+
+## Gaps
+Identified: List of information gaps
+Searched: Gaps we attempted to fill
+Unfillable: Gaps with no data found
+
+## Source Credibility
+- Notes on source quality and reliability
+"""
     )
     
     # Decision Making
     should_continue: bool = Field(description="Whether to continue research")
     reasoning: str = Field(description="Reasoning for continue/stop decision")
-    confidence_score: float = Field(description="Overall confidence in findings (0-1)")
     
-    # Query Strategy
-    priority_topics: List[str] = Field(
-        default_factory=list,
-        description="Ranked list of topics for next queries (red flags prioritized)"
-    )
-    suggested_angles: List[str] = Field(
-        default_factory=list,
-        description="Specific search angles or directions"
-    )
-    
-    # Source Assessment
-    source_credibility: List[SourceCredibility] = Field(
-        default_factory=list,
-        description="LLM-assessed credibility of sources used"
+    # Query Strategy (Textual)
+    query_strategy: str = Field(
+        description="Textual description of priority topics and suggested search angles for next iteration"
     )
 
 

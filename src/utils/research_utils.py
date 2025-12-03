@@ -2,91 +2,100 @@
 
 from typing import Dict, List, Any, Optional
 from ..config.settings import settings
-from ..services.llm.claude_service import ClaudeService
 from ..services.llm.openai_service import OpenAIService
 from pydantic import BaseModel, Field
+from agents import Agent, ModelSettings, Runner, RunConfig, AgentOutputSchema
 
 
-class EntityMergeInput(BaseModel):
-    """Input schema for entity merging."""
-    existing_entities: Dict[str, Any] = Field(description="Existing discovered entities")
-    new_entities: List[str] = Field(description="New entities to merge")
-    
 class EntityMergeOutput(BaseModel):
     """Output schema for entity merging."""
     merged_entities: Dict[str, Any] = Field(
-        description="Merged entity dictionary with deduplicated entries"
+        description="Merged entity dictionary with deduplicated entries. Keys are entity names, values contain metadata."
     )
-    merge_decisions: List[str] = Field(
-        description="List of merge decisions made (e.g., 'Merged: John Smith = J. Smith')"
+    entities_extracted: List[str] = Field(
+        description="List of entity names extracted from the analysis summary"
     )
 
 
 async def merge_entities_with_llm(
     existing_entities: Dict[str, Any],
-    new_entities: List[str],
+    analysis_summary: str,
     session_id: str
 ) -> Dict[str, Any]:
     """
-    Merge new entities with existing ones using LLM for deduplication.
+    Extract entities from analysis text and merge with existing using OpenAI.
     
-    Handles entity disambiguation (e.g., "John Smith" vs "J. Smith") using LLM reasoning.
+    Two-step process:
+    1. Extract entities from analysis_summary text
+    2. Merge with existing entities, handling deduplication
     
     Args:
         existing_entities: Current entity dictionary
-        new_entities: List of newly discovered entity names
+        analysis_summary: Text from Claude's reflection containing entities
         session_id: Session ID for logging
         
     Returns:
         Updated entity dictionary with merged entries
     """
-    if not new_entities:
+    if not analysis_summary:
         return existing_entities
     
-    # If no existing entities, just convert list to dict
-    if not existing_entities:
-        return {entity: {"name": entity, "mentions": 1} for entity in new_entities}
+    # Use OpenAI for extraction + merging (fast, structured output)
+    openai_service = OpenAIService(session_id=session_id)
     
-    # Use Claude for intelligent merging
-    claude = ClaudeService(session_id=session_id)
-    
-    system_prompt = """You are an entity deduplication expert. Your task is to merge new entity names with existing entities, handling variations and duplicates intelligently.
+    instructions = """You are an entity extraction and deduplication expert.
 
-Rules:
-1. Identify if a new entity is the same as an existing one (e.g., "John Smith" = "J. Smith", "FTX" = "FTX Exchange")
-2. For organizations, consider abbreviations and full names as same entity
-3. For persons, match based on first+last name even if middle initial differs
-4. If uncertain (confidence < 0.7), treat as separate entity
-5. Increment mention count for matched entities
-6. Add new entries for distinct entities
-7. Return the complete merged dictionary"""
-    
-    instruction = f"""Existing entities: {existing_entities}
-New entities to merge: {new_entities}
+Your task:
+1. Extract all entities from the analysis summary (persons, organizations, events, locations)
+2. Merge them with existing entities, handling duplicates intelligently
 
-Merge these entities intelligently, handling duplicates and variations."""
+Entity matching rules:
+- "John Smith" = "J. Smith" (name variations)
+- "FTX" = "FTX Exchange" (abbreviations)
+- "Sam Bankman-Fried" = "SBF" (nicknames)
+- If uncertain (confidence < 0.7), treat as separate entity
+
+For merged entities:
+- Keep most complete name
+- Increment mention count
+- Preserve all metadata
+
+Return:
+- merged_entities: Complete entity dictionary (existing + new, deduplicated)
+- entities_extracted: List of entity names found in analysis summary"""
     
-    result = await claude.extract_structured(
-        text=instruction,
-        schema=EntityMergeOutput,
-        system_prompt=system_prompt
+    prompt = f"""# Entity Extraction and Merging
+
+## Existing Entities
+{existing_entities if existing_entities else "None"}
+
+## Analysis Summary (extract entities from this text)
+{analysis_summary}
+
+Extract all entities from the analysis summary and merge with existing entities."""
+    
+    agent = Agent(
+        name="EntityMerger",
+        model=settings.openai_search_model,
+        instructions=instructions,
+        output_type=AgentOutputSchema(EntityMergeOutput, strict_json_schema=False),
+        model_settings=ModelSettings(verbosity="medium"),
     )
     
-    return result.get("merged_entities", existing_entities)
+    result = await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    output: EntityMergeOutput = result.final_output
+    
+    return output.merged_entities if output.merged_entities else existing_entities
 
-
-class GraphMergeInput(BaseModel):
-    """Input schema for graph merging."""
-    existing_graph: Dict[str, Any] = Field(description="Existing entity graph")
-    new_nodes: List[Dict[str, Any]] = Field(description="New nodes to add")
-    new_edges: List[Dict[str, Any]] = Field(description="New edges to add")
 
 class GraphMergeOutput(BaseModel):
     """Output schema for graph merging."""
     merged_graph: Dict[str, Any] = Field(
-        description="Merged graph with deduplicated nodes and edges"
+        description="Merged graph with deduplicated nodes and edges. Structure: {'nodes': [...], 'edges': [...]}"
     )
-    merge_summary: str = Field(description="Summary of merge operations performed")
+    nodes_added: int = Field(description="Number of new nodes added")
+    edges_added: int = Field(description="Number of new edges added")
+    nodes_merged: int = Field(description="Number of nodes merged with existing")
 
 
 async def merge_graph_with_llm(
@@ -96,7 +105,7 @@ async def merge_graph_with_llm(
     session_id: str
 ) -> Dict[str, Any]:
     """
-    Merge new graph nodes and edges with existing graph using LLM.
+    Merge new graph nodes and edges with existing graph using OpenAI.
     
     Handles node deduplication and edge consolidation using LLM reasoning.
     
@@ -116,112 +125,56 @@ async def merge_graph_with_llm(
     if not new_nodes and not new_edges:
         return existing_graph
     
-    # Use Claude for intelligent graph merging
-    claude = ClaudeService(session_id=session_id)
+    # Use OpenAI for intelligent graph merging (fast, structured output)
+    openai_service = OpenAIService(session_id=session_id)
     
-    system_prompt = """You are a graph deduplication expert. Merge new nodes and edges into existing graph structure.
+    instructions = """You are a graph deduplication expert. Merge new nodes and edges into existing graph.
 
-Rules:
-1. Deduplicate nodes by 'id' field (case-insensitive)
-2. For duplicate nodes, merge attributes (keep most complete information)
-3. Deduplicate edges by source+target+relationship combination
-4. For duplicate edges, keep higher confidence score
-5. Maintain graph structure: {"nodes": [...], "edges": [...]}
-6. Ensure all edge source/target IDs exist in nodes list"""
-    
-    instruction = f"""Existing graph: {existing_graph}
-New nodes: {new_nodes}
-New edges: {new_edges}
+Node deduplication rules:
+1. Match by 'id' field (case-insensitive, normalized)
+2. "sam_bankman_fried" = "sbf" = "Sam-Bankman-Fried" (same entity)
+3. For duplicates: merge attributes, keep most complete info
+4. Increment relationship count for matched nodes
 
-Merge the new nodes and edges into the existing graph."""
+Edge deduplication rules:
+1. Match by source + target + relationship (all three must match)
+2. For duplicates: keep edge with higher confidence
+3. Ensure all edge source/target IDs exist in nodes list
+
+Output structure:
+{"nodes": [...], "edges": [...]}"""
     
-    result = await claude.extract_structured(
-        text=instruction,
-        schema=GraphMergeOutput,
-        system_prompt=system_prompt
+    prompt = f"""# Graph Merging Task
+
+## Existing Graph
+Nodes: {len(existing_graph.get('nodes', []))}
+Edges: {len(existing_graph.get('edges', []))}
+{existing_graph}
+
+## New Nodes to Add
+{new_nodes}
+
+## New Edges to Add
+{new_edges}
+
+Merge new nodes and edges into existing graph, handling duplicates intelligently."""
+    
+    agent = Agent(
+        name="GraphMerger",
+        model=settings.openai_search_model,
+        instructions=instructions,
+        output_type=AgentOutputSchema(GraphMergeOutput, strict_json_schema=False),
+        model_settings=ModelSettings(verbosity="medium"),
     )
     
-    return result.get("merged_graph", existing_graph)
+    result = await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    output: GraphMergeOutput = result.final_output
+    
+    return output.merged_graph if output.merged_graph else existing_graph
 
 
-def calculate_confidence_score(
-    reflection_output: Dict[str, Any],
-    search_memory: List[Dict[str, Any]],
-    current_depth: int
-) -> float:
-    """
-    Calculate overall research confidence score using weighted components.
-    
-    Formula (configurable via settings):
-    confidence_score = (
-        finding_confidence * weight_findings +
-        source_credibility * weight_sources +
-        gap_coverage * weight_gaps +
-        cross_validation * weight_validation
-    )
-    
-    Components:
-    1. Finding Confidence: Average confidence of red flags and key findings
-    2. Source Credibility: Average credibility weight across sources
-    3. Gap Coverage: Percentage of identified gaps successfully researched
-    4. Cross-validation: Percentage of facts corroborated by multiple sources
-    
-    Args:
-        reflection_output: Latest reflection output dictionary
-        search_memory: All search memory entries
-        current_depth: Current search depth
-        
-    Returns:
-        Confidence score between 0 and 1
-    """
-    # Component 1: Finding Confidence (from red_flags confidence scores)
-    red_flags = reflection_output.get("red_flags", [])
-    if red_flags:
-        finding_confidence = sum(rf.get("confidence", 0.5) for rf in red_flags) / len(red_flags)
-    else:
-        finding_confidence = 0.5  # Neutral if no red flags yet
-    
-    # Component 2: Source Credibility (from source_credibility assessments)
-    source_creds = reflection_output.get("source_credibility", [])
-    if source_creds:
-        source_credibility = sum(sc.get("credibility", 0.5) for sc in source_creds) / len(source_creds)
-    else:
-        source_credibility = 0.5  # Neutral if no credibility data
-    
-    # Component 3: Gap Coverage (gaps filled / gaps identified)
-    identified_gaps = reflection_output.get("identified_gaps", [])
-    gaps_searched = reflection_output.get("gaps_searched", [])
-    gaps_unfillable = reflection_output.get("gaps_unfillable", [])
-    
-    if identified_gaps:
-        gaps_addressed = len(gaps_searched) + len(gaps_unfillable)
-        gap_coverage = min(gaps_addressed / len(identified_gaps), 1.0)
-    else:
-        gap_coverage = 0.8  # High coverage if no gaps identified (complete picture)
-    
-    # Component 4: Cross-validation (simplified - based on source count per iteration)
-    # Higher cross-validation if multiple sources found per search
-    total_sources = sum(
-        mem.get("sources_found", 0) for mem in search_memory
-    )
-    total_queries = sum(
-        len(mem.get("queries", [])) for mem in search_memory
-    )
-    if total_queries > 0:
-        avg_sources_per_query = total_sources / total_queries
-        cross_validation = min(avg_sources_per_query / 5.0, 1.0)  # Normalize to 0-1 (5 sources = full validation)
-    else:
-        cross_validation = 0.0
-    
-    # Calculate weighted average
-    confidence_score = (
-        finding_confidence * settings.confidence_weight_findings +
-        source_credibility * settings.confidence_weight_sources +
-        gap_coverage * settings.confidence_weight_gaps +
-        cross_validation * settings.confidence_weight_validation
-    )
-    
-    return min(max(confidence_score, 0.0), 1.0)  # Clamp to [0, 1]
+# NOTE: Confidence calculation moved to connection mapping node
+# No longer calculated in reflection (Claude keeps schema simple)
 
 
 def check_stagnation(
@@ -229,7 +182,10 @@ def check_stagnation(
     n_iterations: Optional[int] = None
 ) -> bool:
     """
-    Check if research has stagnated (no new entities in last N iterations).
+    Check if research has stagnated (no significant progress in last N iterations).
+    
+    Since entities are extracted by OpenAI during merge (not in reflection),
+    we check if the analysis_summary indicates new discoveries.
     
     Args:
         reflection_memory: List of reflection outputs
@@ -245,14 +201,25 @@ def check_stagnation(
     if len(reflection_memory) < n_iterations:
         return False
     
-    # Check last N reflections for new entities
+    # Check last N reflections for significant findings
+    # If analysis_summary mentions "no new entities" or "no significant findings"
+    # or is very short, consider it stagnation
     recent_reflections = reflection_memory[-n_iterations:]
     
+    stagnant_count = 0
     for reflection in recent_reflections:
-        new_entities = reflection.get("new_entities", [])
-        if new_entities:  # Found new entities, not stagnated
-            return False
+        analysis = reflection.get("analysis_summary", "").lower()
+        
+        # Check for stagnation indicators
+        if any(indicator in analysis for indicator in [
+            "no new entities",
+            "no significant findings", 
+            "limited new information",
+            "entities discovered: none",
+            "entities discovered:\nnone"
+        ]) or len(analysis) < 200:  # Very short analysis suggests little found
+            stagnant_count += 1
     
-    # No new entities in last N iterations
-    return True
+    # If all recent iterations show stagnation, return True
+    return stagnant_count >= n_iterations
 

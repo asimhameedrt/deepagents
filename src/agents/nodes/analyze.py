@@ -7,7 +7,7 @@ from ...models.state import AgentState
 from ...models.search_result import ReflectionOutput
 from ...services.llm.claude_service import ClaudeService
 from ...observability.detailed_logger import log_node_execution, DetailedLogger
-from ...utils.research_utils import merge_entities_with_llm, calculate_confidence_score
+from ...utils.research_utils import merge_entities_with_llm
 
 
 def _build_reflection_prompt(state: AgentState) -> str:
@@ -20,9 +20,6 @@ def _build_reflection_prompt(state: AgentState) -> str:
     Returns:
         Formatted prompt string
     """
-    # Get latest search memory
-    latest_search = state["search_memory"][-1] if state["search_memory"] else {}
-    
     # Get previous reflections for progression context
     previous_reflections = state.get("reflection_memory", [])
     
@@ -35,23 +32,33 @@ Current Research Depth: {state['current_depth']}
 # Latest Search Results
 """
     
-    # Add search summaries from latest iteration
-    if latest_search:
-        summaries = latest_search.get("summaries", [])
-        for i, summary in enumerate(summaries, 1):
-            prompt += f"\n## Search {i}: {summary.get('query', 'N/A')}\n"
-            prompt += f"Summary: {summary.get('summary', 'No summary available')}\n"
-            prompt += f"Key Entities Mentioned: {', '.join(summary.get('key_entities', []))}\n"
+    # Add search results from latest iteration
+    # Note: search_memory is a list of search results, not grouped by iteration
+    # Get all search results from current depth
+    if state.get("search_memory"):
+        current_depth_searches = [
+            s for s in state["search_memory"] 
+            if s.get("depth") == state["current_depth"]
+        ]
+        
+        for i, search in enumerate(current_depth_searches, 1):
+            prompt += f"\n## Search {i}: {search.get('query', 'N/A')}\n"
+            prompt += f"Search Result: {search.get('search_result', 'No results available')}\n"
+            prompt += f"Sources Found: {search.get('sources_count', 0)}\n"
     
     # Add previous reflection context (show progression)
     if previous_reflections:
         prompt += f"\n# Previous Reflection Summary (Iteration {len(previous_reflections)-1})\n"
         last_reflection = previous_reflections[-1]
-        prompt += f"Previous Findings: {len(last_reflection.get('new_findings', []))} findings\n"
-        prompt += f"Entities Discovered So Far: {len(last_reflection.get('new_entities', []))} entities\n"
-        prompt += f"Red Flags Identified: {len(last_reflection.get('red_flags', []))} red flags\n"
-        prompt += f"Previous Confidence: {last_reflection.get('confidence_score', 0.0):.2f}\n"
+        
+        # Display previous analysis summary (truncated if too long)
+        prev_analysis = last_reflection.get('analysis_summary', '')
+        prompt += f"Previous Analysis:\n{prev_analysis}\n\n"
+        
+        # Show decision and reasoning
         prompt += f"Previous Decision: {'Continue' if last_reflection.get('should_continue') else 'Stop'}\n"
+        prompt += f"Reasoning: {last_reflection.get('reasoning', 'N/A')}\n"
+        prompt += f"Query Strategy Suggested: {last_reflection.get('query_strategy', 'N/A')}\n"
     
     # Add current state context
     prompt += f"\n# Current Research State\n"
@@ -65,53 +72,64 @@ Current Research Depth: {state['current_depth']}
 
 # Your Task: Analyze and Reflect
 
-Please perform a comprehensive analysis of the latest search results:
+Perform comprehensive analysis of search results and provide output in the following format:
 
-1. **Compress Findings**: Extract key facts by category
-   - Biographical (personal details, education, background)
-   - Professional (employment history, roles, positions)
-   - Financial (assets, investments, transactions, net worth)
-   - Legal (lawsuits, investigations, regulatory actions)
-   - Behavioral (patterns, associations, decision-making)
-   - Other relevant categories based on findings
+## Analysis Summary Structure
 
-2. **Source Credibility Assessment**: Evaluate each source's credibility (0-1 scale)
-   - High credibility (0.8-1.0): Government sites, verified databases, major news outlets
-   - Medium credibility (0.5-0.8): Established blogs, company websites, trade publications
-   - Low credibility (0.2-0.5): Social media, forums, unverified sources
-   - Provide specific credibility scores for sources used
+### Key Findings
+List new facts discovered (biographical, professional, financial, legal, behavioral)
 
-3. **Entity Extraction**: Identify all new entities discovered
-   - Persons (names, roles, relationships to subject)
-   - Organizations (companies, institutions, agencies)
-   - Events (significant occurrences, transactions, meetings)
-   - Locations (places of residence, business operations)
+### Entities Discovered
+List all new entities:
+- Persons (names, roles)
+- Organizations (companies, institutions)
+- Events (significant occurrences)
+- Locations (relevant places)
 
-4. **Relationship Mapping**: Describe connections found
-   - Format: "Entity1 → relationship → Entity2"
-   - Include timeframes and context where available
+### Relationships
+Describe connections using format: (subject) --relation--> (object)
+Examples:
+- (Sam Bankman-Fried) --founded--> (FTX)
+- (FTX) --sister-company--> (Alameda Research)
+- (SBF) --romantic-relationship--> (Caroline Ellison)
 
-5. **Risk Categorization**: Classify all findings
-   - **Red Flags**: Concerning findings with severity (critical/high/medium/low) and confidence (0-1)
-   - **Neutral Facts**: Factual information without risk implications
-   - **Positive Indicators**: Achievements, credentials, positive associations
+### Risk Assessment
 
-6. **Gap Analysis**:
-   - Identify information gaps (what's still unknown or unclear)
-   - Note which gaps were searched in this iteration
-   - Mark gaps as unfillable if no data found after searching
+RED FLAGS:
+List concerning findings with severity in brackets
+- [CRITICAL] Description of critical red flag
+- [HIGH] Description of high severity issue
+- [MEDIUM] Description of medium concern
 
-7. **Research Decision**:
-   - Should research continue or is sufficient information gathered?
-   - Provide clear reasoning for your decision
-   - Consider: depth of coverage, red flag severity, information completeness
+NEUTRAL:
+- Factual findings without risk implications
 
-8. **Next Steps Strategy** (if continuing):
-   - Priority topics for next searches (prioritize red flags and high-severity issues)
-   - Suggested search angles or directions
-   - Focus areas based on gaps and new entities
+POSITIVE:
+- Positive indicators, achievements, credentials
 
-Provide your analysis in structured JSON format matching the ReflectionOutput schema.
+### Gaps
+Identified: What information is still missing?
+Searched: Which gaps did we try to fill this iteration?
+Unfillable: Which gaps have no available data?
+
+### Source Credibility
+Notes on source quality:
+- High credibility: Government, verified databases, major news
+- Medium credibility: Established sites, company websites
+- Low credibility: Social media, unverified sources
+
+## Decision Making
+Decide if research should continue based on:
+- Depth of coverage achieved
+- Severity of red flags found
+- Completeness of information
+- Remaining unknowns
+
+## Query Strategy (if continuing)
+Describe priority topics and search angles for next iteration:
+- Prioritize red flags and high-severity issues
+- Target newly discovered entities
+- Address critical information gaps
 """
     
     return prompt
@@ -138,6 +156,11 @@ async def analyze_and_reflect(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with reflection results
     """
+    # print("\n"*12)
+    # print("################################################################################")
+    # print("Agent State: ", json.dumps(state, indent=2, default=str))
+    # print("################################################################################")
+    
     logger = DetailedLogger(state["session_id"])
     logger.log_info("Starting reflection and analysis", {
         "current_depth": state["current_depth"],
@@ -154,6 +177,12 @@ async def analyze_and_reflect(state: AgentState) -> AgentState:
     
     # Build reflection prompt
     prompt = _build_reflection_prompt(state)
+    print("\n"*12)
+    print("################################################################################")
+    print("_build_reflection_prompt: ", prompt)
+    print("################################################################################")
+    
+    
     
     system_prompt = """You are an expert research analyst specializing in Enhanced Due Diligence (EDD) investigations. 
 Your role is to analyze search results, identify risks, and guide investigation strategy.
@@ -176,48 +205,35 @@ Be thorough, objective, and strategic in your analysis."""
     )
     
     logger.log_info("Reflection analysis complete", {
-        "new_findings": len(reflection_result.get("new_findings", [])),
-        "new_entities": len(reflection_result.get("new_entities", [])),
-        "red_flags": len(reflection_result.get("red_flags", [])),
+        "analysis_length": len(reflection_result.get("analysis_summary", "")),
         "should_continue": reflection_result.get("should_continue", False)
     })
     
-    # Merge entities with existing ones (LLM-based deduplication)
-    logger.log_info("Merging entities with LLM deduplication")
+    # Merge entities using OpenAI (handles entity extraction from text + deduplication)
+    logger.log_info("Merging entities with OpenAI (extracts from analysis_summary)")
     merged_entities = await merge_entities_with_llm(
         existing_entities=state.get("discovered_entities", {}),
-        new_entities=reflection_result.get("new_entities", []),
+        analysis_summary=reflection_result.get("analysis_summary", ""),
         session_id=state["session_id"]
     )
-    
-    # Calculate overall confidence score
-    confidence_score = calculate_confidence_score(
-        reflection_output=reflection_result,
-        search_memory=state.get("search_memory", []),
-        current_depth=state["current_depth"]
-    )
-    
-    logger.log_info(f"Calculated confidence score: {confidence_score:.3f}")
     
     # Update state with reflection results
     state["reflection_memory"].append(reflection_result)
     state["discovered_entities"] = merged_entities
-    state["confidence_score"] = confidence_score
-    
-    # Update risk indicators (append new findings)
-    red_flags_text = [rf.get("finding") for rf in reflection_result.get("red_flags", [])]
-    state["risk_indicators"]["red_flags"].extend(red_flags_text)
-    state["risk_indicators"]["neutral"].extend(reflection_result.get("neutral_facts", []))
-    state["risk_indicators"]["positive"].extend(reflection_result.get("positive_indicators", []))
     
     # Update control flow based on reflection decision
     state["should_continue"] = reflection_result.get("should_continue", True)
     
     logger.log_info("Reflection complete", {
         "total_entities": len(merged_entities),
-        "total_red_flags": len(state["risk_indicators"]["red_flags"]),
-        "confidence_score": confidence_score,
         "should_continue": state["should_continue"]
+    })
+    
+    # Increment depth after completing current iteration
+    # This ensures the next iteration uses the correct depth for query generation
+    state["current_depth"] += 1
+    logger.log_info("Depth incremented after analysis", {
+        "new_depth": state["current_depth"]
     })
     
     return state
