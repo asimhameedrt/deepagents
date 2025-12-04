@@ -2,165 +2,14 @@
 
 import json
 from datetime import datetime
-from typing import List
-from pydantic import BaseModel, Field
 
-from ...models.state import AgentState
-from ...config.settings import settings
-from ...services.llm.openai_service import OpenAIService
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
 from agents import Agent, ModelSettings, Runner, RunConfig
 
-
-class RedFlag(BaseModel):
-    """Individual red flag with severity and detail."""
-    severity: str = Field(description="Severity level: CRITICAL, HIGH, MEDIUM, LOW")
-    detail: str = Field(description="Detailed description of the red flag")
-
-
-class DueDiligenceReport(BaseModel):
-    """Comprehensive due diligence report schema."""
-    
-    executive_summary: str = Field(description="High-level overview of key findings and risk assessment")
-    risk_level: str = Field(description="Overall risk level: CRITICAL, HIGH, MEDIUM, LOW")
-    key_findings: List[str] = Field(description="Top 5-10 most important findings")
-    
-    # Detailed sections
-    biographical_overview: str = Field(description="Personal background, education, family")
-    professional_history: str = Field(description="Employment history, roles, career progression")
-    financial_analysis: str = Field(description="Assets, investments, transactions, net worth")
-    legal_regulatory: str = Field(description="Lawsuits, investigations, compliance issues")
-    behavioral_patterns: str = Field(description="Decision-making patterns, associations, conduct")
-    
-    # Risk assessment
-    red_flags: List[RedFlag] = Field(description="Critical red flags with severity and details")
-    neutral_facts: List[str] = Field(description="Neutral factual findings")
-    positive_indicators: List[str] = Field(description="Positive achievements and indicators")
-    
-    # Entity analysis
-    key_relationships: List[str] = Field(description="Most important entity relationships")
-    suspicious_connections: List[str] = Field(description="Concerning patterns or connections")
-    
-    # Evidence and sources
-    source_summary: str = Field(description="Summary of source quality and credibility")
-    evidence_strength: str = Field(description="Assessment of evidence quality")
-    
-    # Gaps and limitations
-    information_gaps: List[str] = Field(description="Remaining unknowns or unclear areas")
-    research_limitations: str = Field(description="Constraints on research completeness")
-    
-    # Recommendations
-    recommendations: List[str] = Field(description="Recommended actions or further investigation")
-
-
-def _build_synthesis_prompt(state: AgentState) -> str:
-    """Build comprehensive prompt for report synthesis."""
-    
-    # Gather all data
-    reflection_memory = state.get("reflection_memory", [])
-    entity_graph = state.get("entity_graph", {})
-    risk_indicators = state.get("risk_indicators", {})
-    search_iterations = state.get("search_iterations", [])
-    
-    prompt = f"""# Due Diligence Report Synthesis
-
-## Subject Information
-Subject: {state['subject']}
-Context: {state.get('subject_context', 'N/A')}
-Session ID: {state['session_id']}
-
-## Research Metrics
-Search Depth: {state['current_depth']} iterations
-Total Queries: {len(state.get('queries_executed', []))}
-Total Sources: {sum(s.get('sources_found', 0) for s in search_iterations)}
-Confidence Score: {state.get('confidence_score', 0.0):.2f}
-Termination Reason: {state.get('termination_reason', 'N/A')}
-
-"""
-    
-    # Add reflection summaries
-    prompt += "\n## Research Findings (All Iterations)\n\n"
-    for i, reflection in enumerate(reflection_memory):
-        prompt += f"### Iteration {i}\n"
-        prompt += f"**Analysis Summary:**\n{reflection.get('analysis_summary', 'No analysis available')}\n\n"
-        prompt += f"**Decision:** {'Continue' if reflection.get('should_continue') else 'Stop'}\n"
-        prompt += f"**Reasoning:** {reflection.get('reasoning', 'N/A')}\n\n"
-    
-    # Add entity graph summary
-    if entity_graph.get("nodes"):
-        prompt += f"\n## Entity Graph\n"
-        prompt += f"Total Entities: {len(entity_graph.get('nodes', []))}\n"
-        prompt += f"Total Relationships: {len(entity_graph.get('edges', []))}\n\n"
-        
-        prompt += "**Key Entities:**\n"
-        for node in entity_graph.get("nodes", [])[:10]:
-            prompt += f"- {node.get('name', 'Unknown')} ({node.get('type', 'unknown')})\n"
-        
-        prompt += "\n**Key Relationships:**\n"
-        for edge in entity_graph.get("edges", [])[:15]:
-            source = edge.get("source", "?")
-            target = edge.get("target", "?")
-            rel = edge.get("relationship", "?")
-            prompt += f"- {source} → {rel} → {target}\n"
-    
-    # Add risk indicators summary
-    prompt += "\n## Risk Indicators Summary\n"
-    prompt += f"Red Flags: {len(risk_indicators.get('red_flags', []))}\n"
-    prompt += f"Neutral Facts: {len(risk_indicators.get('neutral', []))}\n"
-    prompt += f"Positive Indicators: {len(risk_indicators.get('positive', []))}\n"
-    
-    # Add source quality info
-    total_sources = sum(s.get("sources_found", 0) for s in search_iterations)
-    prompt += f"\n## Source Quality\n"
-    prompt += f"Total Sources Referenced: {total_sources}\n"
-    
-    # Task instructions
-    prompt += """
-
-## Your Task: Synthesize Comprehensive Due Diligence Report
-
-Create a detailed, professional due diligence report with the following sections:
-
-1. **Executive Summary**: Concise overview (3-5 sentences) of who the subject is and key risk assessment
-
-2. **Risk Level**: Overall assessment (CRITICAL/HIGH/MEDIUM/LOW) based on findings
-
-3. **Key Findings**: Top 5-10 most important discoveries (prioritize red flags)
-
-4. **Biographical Overview**: Personal background, education, family, early life
-
-5. **Professional History**: Employment timeline, positions held, career trajectory
-
-6. **Financial Analysis**: Assets, investments, financial dealings, net worth information
-
-7. **Legal & Regulatory**: Lawsuits, investigations, regulatory actions, compliance issues
-
-8. **Behavioral Patterns**: Decision-making style, associations, ethical conduct, reputation
-
-9. **Red Flags**: All concerning findings with severity and evidence
-
-10. **Neutral Facts**: Important factual information without risk implications
-
-11. **Positive Indicators**: Achievements, credentials, positive associations
-
-12. **Key Relationships**: Most important entity connections
-
-13. **Suspicious Connections**: Concerning patterns or hidden relationships
-
-14. **Source Summary**: Assessment of source quality and credibility
-
-15. **Evidence Strength**: How strong is the evidence for key findings?
-
-16. **Information Gaps**: What remains unknown or unclear?
-
-17. **Research Limitations**: Constraints on completeness (time, access, data availability)
-
-18. **Recommendations**: Next steps or further investigation needs
-
-Write in professional, objective tone. Be specific with facts and evidence. Cite severity levels for red flags.
-"""
-    
-    return prompt
+from ...models.state import AgentState
+from ...models.search_result import DueDiligenceReport
+from ...config.settings import settings
+from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...prompts.synthesis import build_synthesis_prompt, SYNTHESIS_INSTRUCTIONS
 
 
 @log_node_execution
@@ -181,29 +30,19 @@ async def synthesize_report(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with final_report
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
     logger.log_info("Starting report synthesis")
     
     try:
         # Build synthesis prompt
-        prompt = _build_synthesis_prompt(state)
+        prompt = build_synthesis_prompt(state)
         
         # Use OpenAI Agents SDK for report generation
-        instructions = """You are an expert due diligence analyst preparing comprehensive investigation reports.
-
-Your reports are:
-- Professional and objective
-- Well-structured and detailed
-- Evidence-based with specific facts
-- Clear about risks and uncertainties
-- Actionable with concrete recommendations
-
-Synthesize all research findings into a cohesive, comprehensive report."""
-        
         agent = Agent(
             name="ReportSynthesizer",
             model=settings.openai_search_model,
-            instructions=instructions,
+            instructions=SYNTHESIS_INSTRUCTIONS,
             output_type=DueDiligenceReport,
             model_settings=ModelSettings(verbosity="medium"),
         )
@@ -268,7 +107,6 @@ Synthesize all research findings into a cohesive, comprehensive report."""
         state["error_count"] = state.get("error_count", 0) + 1
         state["should_continue"] = False
         state["termination_reason"] = f"report_generation_error: {str(e)}"
-        print(f"Synthesis error: {e}")
         raise
     
     return state

@@ -1,4 +1,14 @@
-"""Custom audit logger for compliance requirements."""
+"""
+Custom audit logger for compliance requirements.
+
+This module provides structured audit logging for:
+- Session tracking and lifecycle
+- Search operations with full context
+- Risk findings and evidence
+- Report generation metadata
+
+All audit logs are written in JSON format for easy querying and analysis.
+"""
 
 import json
 import logging
@@ -18,12 +28,13 @@ class AuditLogger:
     """
     
     def __init__(self, log_dir: Optional[Path] = None):
-        """Initialize the audit logger.
+        """
+        Initialize the audit logger.
         
         Args:
-            log_dir: Directory for log files (defaults to settings)
+            log_dir: Directory for log files (defaults to settings.log_dir)
         """
-        self.log_dir = log_dir or settings.log_dir
+        self.log_dir = Path(log_dir) if log_dir else Path(settings.log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         # Configure structlog
@@ -194,11 +205,21 @@ class AuditLogger:
             })
     
     def _write_session_log(self, session_id: str, data: Dict[str, Any]) -> None:
-        """Write to session-specific log file."""
+        """
+        Write to session-specific log file.
+        
+        Args:
+            session_id: Session identifier
+            data: Data to log
+        """
         log_file = self.log_dir / f"{session_id}.jsonl"
         
-        with open(log_file, 'a') as f:
-            f.write(json.dumps(data) + '\n')
+        try:
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(data, default=str) + '\n')
+        except Exception as e:
+            # Fallback to console if file writing fails
+            print(f"⚠️  Audit logging error: {e}")
 
 
 # Configure basic logging for structlog compatibility

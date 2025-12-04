@@ -1,10 +1,11 @@
-"""Research-specific utility functions for entity merging, graph operations, and confidence calculation."""
+"""Research-specific utility functions for entity merging, graph operations, and stagnation detection."""
 
 from typing import Dict, List, Any, Optional
-from ..config.settings import settings
-from ..services.llm.openai_service import OpenAIService
 from pydantic import BaseModel, Field
 from agents import Agent, ModelSettings, Runner, RunConfig, AgentOutputSchema
+
+from ..config.settings import settings
+from ..services.llm.openai_service import OpenAIService
 
 
 class EntityMergeOutput(BaseModel):
@@ -38,10 +39,8 @@ async def merge_entities_with_llm(
         Updated entity dictionary with merged entries
     """
     if not analysis_summary:
-        return existing_entities
+        return existing_entities or {}
     
-    # Use OpenAI for extraction + merging (fast, structured output)
-    openai_service = OpenAIService(session_id=session_id)
     
     instructions = """You are an entity extraction and deduplication expert.
 
@@ -116,7 +115,7 @@ async def merge_graph_with_llm(
         session_id: Session ID for logging
         
     Returns:
-        Updated graph structure
+        Updated graph structure with deduplicated nodes and edges
     """
     # Initialize empty graph if needed
     if not existing_graph:
@@ -124,6 +123,12 @@ async def merge_graph_with_llm(
     
     if not new_nodes and not new_edges:
         return existing_graph
+    
+    # Validate existing graph structure
+    if "nodes" not in existing_graph:
+        existing_graph["nodes"] = []
+    if "edges" not in existing_graph:
+        existing_graph["edges"] = []
     
     # Use OpenAI for intelligent graph merging (fast, structured output)
     openai_service = OpenAIService(session_id=session_id)
@@ -141,8 +146,13 @@ Edge deduplication rules:
 2. For duplicates: keep edge with higher confidence
 3. Ensure all edge source/target IDs exist in nodes list
 
-Output structure:
-{"nodes": [...], "edges": [...]}"""
+Return the merged graph in the 'merged_graph' field as:
+{
+  "merged_graph": {"nodes": [...], "edges": [...]},
+  "nodes_added": <count of new nodes added>,
+  "edges_added": <count of new edges added>,
+  "nodes_merged": <count of nodes merged with existing>
+}"""
     
     prompt = f"""# Graph Merging Task
 
@@ -173,10 +183,6 @@ Merge new nodes and edges into existing graph, handling duplicates intelligently
     return output.merged_graph if output.merged_graph else existing_graph
 
 
-# NOTE: Confidence calculation moved to connection mapping node
-# No longer calculated in reflection (Claude keeps schema simple)
-
-
 def check_stagnation(
     reflection_memory: List[Dict[str, Any]],
     n_iterations: Optional[int] = None
@@ -184,8 +190,10 @@ def check_stagnation(
     """
     Check if research has stagnated (no significant progress in last N iterations).
     
-    Since entities are extracted by OpenAI during merge (not in reflection),
-    we check if the analysis_summary indicates new discoveries.
+    Stagnation indicators:
+    - Analysis mentions "no new entities" or "no significant findings"
+    - Very short analysis summaries (< 200 chars)
+    - Repeated similar findings across iterations
     
     Args:
         reflection_memory: List of reflection outputs
@@ -197,29 +205,39 @@ def check_stagnation(
     if n_iterations is None:
         n_iterations = settings.stagnation_check_iterations
     
+    # Validate inputs
+    if not reflection_memory or n_iterations <= 0:
+        return False
+    
     # Need at least N reflections to check
     if len(reflection_memory) < n_iterations:
         return False
     
     # Check last N reflections for significant findings
-    # If analysis_summary mentions "no new entities" or "no significant findings"
-    # or is very short, consider it stagnation
     recent_reflections = reflection_memory[-n_iterations:]
+    
+    # Define stagnation indicators
+    stagnation_indicators = [
+        "no new entities",
+        "no significant findings", 
+        "limited new information",
+        "no new information",
+        "entities discovered: none",
+        "entities discovered:\nnone",
+        "nothing new discovered"
+    ]
     
     stagnant_count = 0
     for reflection in recent_reflections:
         analysis = reflection.get("analysis_summary", "").lower()
         
         # Check for stagnation indicators
-        if any(indicator in analysis for indicator in [
-            "no new entities",
-            "no significant findings", 
-            "limited new information",
-            "entities discovered: none",
-            "entities discovered:\nnone"
-        ]) or len(analysis) < 200:  # Very short analysis suggests little found
+        has_indicator = any(indicator in analysis for indicator in stagnation_indicators)
+        is_too_short = len(analysis) < 200  # Very short analysis suggests little found
+        
+        if has_indicator or is_too_short:
             stagnant_count += 1
     
-    # If all recent iterations show stagnation, return True
+    # If majority of recent iterations show stagnation, return True
     return stagnant_count >= n_iterations
 

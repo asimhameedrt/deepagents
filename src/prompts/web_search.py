@@ -1,4 +1,10 @@
-"""Prompts for web search and search query generation using OpenAI Agents SDK.
+"""
+Prompts for web search and search query generation using OpenAI Agents SDK.
+
+This module provides instruction templates and prompt builders for:
+- Web search operations with structured output
+- Search query generation and refinement
+- Due diligence research context
 
 Used by:
 - `services/llm/openai_service.py` → `OpenAIService.web_search`
@@ -6,6 +12,12 @@ Used by:
 """
 
 from datetime import datetime
+from typing import Optional
+
+
+# ============================================================================
+# Web Search Instructions
+# ============================================================================
 
 WEB_SEARCH_PROMPT = """You are an information Researcher assistant conducting due diligence research. For context, today's date is {date}.
 {subject_context}
@@ -51,29 +63,48 @@ Remember, your goal is to create a summary that can be easily understood and uti
 </notes_to_researcher>
 """
 
-def build_web_search_instructions(context: str = None, include_context: bool = False) -> str:
-    """Build instructions for the web search agent.
+# ============================================================================
+# Prompt Builder Functions
+# ============================================================================
+
+def build_web_search_instructions(
+    context: Optional[str] = None, 
+    include_context: bool = False
+) -> str:
+    """
+    Build instructions for the web search agent.
     
     Args:
         context: Additional context for the search (e.g., subject information)
         include_context: Whether to include the context in the instructions
+        
     Returns:
-        Instructions string for the agent
+        Formatted instructions string for the agent
     """
-    context_str = 'Background research for due diligence purposes' if context is None else context
-    context_str = f"**Subject Context:** {context_str}\n\n" if include_context else ""
+    # Use default context if none provided
+    default_context = 'Background research for due diligence purposes'
+    context_str = context if context else default_context
     
-    return WEB_SEARCH_PROMPT.format(date=datetime.now().strftime('%Y-%m-%d'), subject_context=context_str)
+    # Include context in instructions if requested
+    if include_context:
+        context_str = f"**Subject Context:** {context_str}\n\n"
+    else:
+        context_str = ""
+    
+    # Format with current date
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    return WEB_SEARCH_PROMPT.format(date=current_date, subject_context=context_str)
 
 
 def build_query_generation_instructions(max_queries: int) -> str:
-    """Build instructions for the query generation agent.
+    """
+    Build instructions for the query generation agent.
     
     Args:
         max_queries: Maximum number of queries to generate
         
     Returns:
-        Instructions string for the agent
+        Formatted instructions string for the agent
     """
     return (
         f"You are a research strategist planning due diligence searches.\n\n"
@@ -89,38 +120,44 @@ def build_query_generation_instructions(max_queries: int) -> str:
 
 def build_query_generation_prompt(
     subject: str,
-    context: str = None,
+    context: Optional[str] = None,
     depth: int = 0,
-    strategy: str = None,
-    strategic_context: str = None,
-    discovered_info: list = None
+    strategy: Optional[str] = None,
+    strategic_context: Optional[str] = None,
+    discovered_info: Optional[list] = None
 ) -> str:
-    """Build the user prompt for query generation.
+    """
+    Build the user prompt for query generation.
     
     Args:
-        subject: Research subject
-        context: Additional context
-        depth: Current search depth
-        strategy: Search strategy (e.g., focus area)
-        strategic_context: Strategic context from analysis
-        discovered_info: Previously discovered information
+        subject: Research subject (required)
+        context: Additional context about the subject
+        depth: Current search depth (0 for initial queries)
+        strategy: Search strategy or focus area (deprecated, use strategic_context)
+        strategic_context: Strategic context from reflection analysis
+        discovered_info: Previously discovered information (list of strings)
         
     Returns:
-        User prompt string for the agent
+        Formatted user prompt string for the agent
     """
+    # Build base prompt
     query_parts = [
         f"Subject: {subject}",
         f"Context: {context or 'General due diligence research'}",
         f"Search Depth: {depth}",
-        # f"Focus Area: {strategy}"
     ]
     
+    # Add strategic context if provided
     if strategic_context:
         query_parts.append(f"\nStrategic Context:\n{strategic_context}")
     
-    if discovered_info:
-        query_parts.append("\nPreviously discovered:\n" + "\n".join(discovered_info[:10]))
+    # Add previously discovered information if provided
+    if discovered_info and len(discovered_info) > 0:
+        # Limit to first 10 items to avoid prompt bloat
+        info_preview = "\n".join(f"- {info}" for info in discovered_info[:10])
+        query_parts.append(f"\nPreviously discovered:\n{info_preview}")
     
+    # Add generation instruction
     query_parts.append("\nGenerate search queries:")
     
     return "\n".join(query_parts)

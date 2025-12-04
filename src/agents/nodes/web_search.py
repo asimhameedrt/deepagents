@@ -20,14 +20,15 @@ async def execute_web_search(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with search results
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
-    search_executor = SearchExecutor(session_id=state.get("session_id"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
+    search_executor = SearchExecutor(session_id=session_id)
     
-    # Get pending queries (or generate if none)
+    # Get pending queries
     queries = state.get("pending_queries", [])
     
     if not queries:
-        logger.log("no_queries", {"message": "No pending queries to execute"})
+        logger.log_warning("No pending queries to execute")
         return state
     
     # Execute searches in parallel

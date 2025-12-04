@@ -1,10 +1,18 @@
-"""OpenAI service for web search and structured output using the Agents SDK."""
+"""
+OpenAI service for web search and structured output using the Agents SDK.
 
-import os
+This module provides a high-level interface to OpenAI's Agents SDK,
+supporting:
+- Web search with structured output
+- Search query generation
+- Entity connection mapping
+- Automatic token tracking and logging
+"""
+
 import time
 from typing import List, Optional
 
-from agents import Agent, ModelSettings, Runner, RunConfig, WebSearchTool
+from agents import Agent, ModelSettings, Runner, RunConfig, WebSearchTool, AgentOutputSchema
 from openai import AsyncOpenAI
 from openai.types.responses.web_search_tool_param import UserLocation
 from openai.types.shared.reasoning import Reasoning
@@ -69,9 +77,7 @@ class OpenAIService:
         
         output: WebSearchOutput = result.final_output
         
-        print(f"Output: {output}")
-        print("--------------------------------")
-        print("\n"*10)
+
         
         # Convert structured output sources to Source objects
         sources = [WebSearchSource(url=src.url, title=src.title) for src in output.sources]
@@ -91,6 +97,8 @@ class OpenAIService:
         
         if not output.search_result:
             print(f"⚠️  Warning: Incomplete output for query: {query}")
+            self._logger.log_warning(f"Incomplete output for query: {query}")
+
         
         return output
     
@@ -115,8 +123,9 @@ class OpenAIService:
             SearchQueriesList with list of search queries
         """
         
+        print("########################################################")
         print(f"Building query generation agent with model: {self.search_model}")
-        print("--------------------------------")
+        print("########################################################")
         
         agent = Agent(
             name="QueryStrategist",
@@ -138,15 +147,8 @@ class OpenAIService:
             )
             result = await Runner.run(agent, user_prompt, run_config=RunConfig(tracing_disabled=True))
             extracted_tokens = await extract_tokens(result)
-            print(f"Extracted tokens: {extracted_tokens}")
-            print("--------------------------------")
-            
             duration_ms = (time.time() - start_time) * 1000
-            
             output: SearchQueriesList = result.final_output
-            print(f"Output: {output}")
-            print(f"Output type: {type(output)}")
-            print("--------------------------------")
 
             log_tokens = {
                 "prompt": extracted_tokens.get("input_tokens", 0),
@@ -225,7 +227,7 @@ For entity importance:
             name="ConnectionMapper",
             model=self.search_model,
             instructions=instructions,
-            output_type=ConnectionMappingOutput,
+            output_type=AgentOutputSchema(ConnectionMappingOutput, strict_json_schema=False),
             model_settings=ModelSettings(verbosity="medium"),
         )
         

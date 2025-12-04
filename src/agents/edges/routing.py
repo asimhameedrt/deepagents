@@ -12,37 +12,43 @@ def should_continue_research(state: AgentState) -> str:
     
     This implements the search strategy by deciding whether to:
     - continue_search: Generate more queries and continue searching
-    - analyze: Switch to connection mapping (when stagnation detected)
-    - finish: Stop research and synthesize report
+    - finalize: Stop research, map connections, and synthesize report
     
     Decision criteria (checked in order):
-    1. Max depth reached → finish
-    2. Reflection recommends stop → finish
-    3. Stagnation detected (no new entities in N iterations) → analyze
+    1. Max depth reached → finalize (map connections then synthesize)
+    2. Reflection recommends stop → finalize (map connections then synthesize)
+    3. Stagnation detected (no new entities in N iterations) → finalize
     4. Otherwise → continue_search
     
     Note: Depth is incremented in the analyze_and_reflect node BEFORE this routing
     function is called. This ensures depth is correct when checking limits.
     Example: max_depth=3 → iterations run at depths 0, 1, 2 (total 3 iterations).
     
+    The "finalize" route always goes through map_connections before synthesis to
+    ensure entity graph is populated with nodes and edges from all discovered entities.
+    
     Args:
         state: Current agent state
         
     Returns:
-        Next node name ("continue_search", "analyze", "finish")
+        Next node name ("continue_search", "finalize")
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
+    
+    current_depth = state.get("current_depth", 0)
+    max_depth = state.get("max_depth", settings.max_search_depth)
     
     # 1. Check hard limit: max depth
     # Note: Depth was already incremented in analyze_and_reflect node
     # With max_depth=3, we get iterations at depth 0, 1, 2 (total 3 iterations)
-    if state["current_depth"] >= state["max_depth"]:
-        logger.log_info("Routing decision: FINISH (max depth reached)", {
-            "current_depth": state["current_depth"],
-            "max_depth": state["max_depth"]
+    if current_depth >= max_depth:
+        logger.log_info("Routing decision: FINALIZE (max depth reached)", {
+            "current_depth": current_depth,
+            "max_depth": max_depth
         })
         state["termination_reason"] = "max_depth_reached"
-        return "finish"
+        return "finalize"
     
     # 2. Check reflection decision
     reflection_memory = state.get("reflection_memory", [])
@@ -51,24 +57,25 @@ def should_continue_research(state: AgentState) -> str:
         should_continue = latest_reflection.get("should_continue", True)
         
         if not should_continue:
-            logger.log_info("Routing decision: FINISH (reflection recommended stop)", {
+            logger.log_info("Routing decision: FINALIZE (reflection recommended stop)", {
                 "reasoning": latest_reflection.get("reasoning", "No reasoning provided")
             })
             state["termination_reason"] = "reflection_recommended_stop"
-            return "finish"
+            return "finalize"
     
     # 3. Check stagnation (no new entities in last N iterations)
     if check_stagnation(reflection_memory, settings.stagnation_check_iterations):
-        logger.log_info("Routing decision: ANALYZE (stagnation detected)", {
+        logger.log_info("Routing decision: FINALIZE (stagnation detected)", {
             "stagnation_iterations": settings.stagnation_check_iterations,
             "current_depth": state["current_depth"]
         })
-        return "analyze"
+        state["termination_reason"] = "stagnation_detected"
+        return "finalize"
     
     # 4. Continue searching
     logger.log_info("Routing decision: CONTINUE_SEARCH", {
-        "current_depth": state["current_depth"],
-        "next_iteration": state["current_depth"]
+        "current_depth": current_depth,
+        "next_iteration": current_depth
     })
     
     return "continue_search"

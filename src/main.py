@@ -1,60 +1,110 @@
-"""Main entry point for the Deep Research Agent."""
+"""
+Main entry point for the Deep Research Agent.
+
+This module provides the main DeepResearchAgent class and CLI interface
+for conducting comprehensive due diligence research.
+"""
 
 import asyncio
 import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+from dotenv import load_dotenv
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
 
 from .config.settings import settings
 from .models.state import AgentState
 from .agents.graph import research_graph
 from .utils.helpers import generate_session_id, format_duration
 from .observability.audit_logger import AuditLogger
-from langfuse import Langfuse, get_client
-from langfuse.langchain import CallbackHandler
-from dotenv import load_dotenv
+
+# Load environment variables
 load_dotenv()
 
+
 class DeepResearchAgent:
-    """Main agent class for conducting deep research."""
+    """
+    Main agent class for conducting deep research investigations.
+    
+    This class orchestrates the entire research workflow using LangGraph,
+    manages observability through audit logging, and optionally integrates
+    with LangFuse for tracing.
+    """
     
     def __init__(self):
-        """Initialize the agent."""
+        """
+        Initialize the deep research agent.
+        
+        Sets up:
+        - LangGraph workflow
+        - Audit logging
+        - LangFuse tracing (if configured)
+        """
         self.graph = research_graph
         self.audit_logger = AuditLogger()
+        self.langfuse_handler = self._initialize_langfuse()
+    
+    def _initialize_langfuse(self) -> Optional[CallbackHandler]:
+        """
+        Initialize LangFuse callback handler if credentials are configured.
         
-        # Initialize LangFuse callback handler if available (only import if keys configured)
-        self.langfuse_handler = None
-        if settings.langfuse_public_key and settings.langfuse_secret_key:
-            try:
-                # --- Langfuse init (optional explicit init instead of env-only) ---
-                langfuse_client = get_client(
-                    public_key=settings.langfuse_public_key,
-                    secret_key=settings.langfuse_secret_key,
-                )
-                self.langfuse_handler = CallbackHandler()
-            except Exception:
-                self.langfuse_handler = None
+        Returns:
+            CallbackHandler if successful, None otherwise
+        """
+        if not (settings.langfuse_public_key and settings.langfuse_secret_key):
+            return None
+        
+        try:
+            # Initialize LangFuse client
+            get_client(
+                public_key=settings.langfuse_public_key,
+                secret_key=settings.langfuse_secret_key,
+            )
+            return CallbackHandler()
+        except Exception as e:
+            print(f"⚠️  Warning: Could not initialize LangFuse: {e}")
+            return None
     
     async def research(
         self,
         subject: str,
         context: Optional[str] = None,
         max_depth: Optional[int] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Conduct deep research on a subject.
         
+        This is the main entry point for research operations. It:
+        1. Initializes the session
+        2. Executes the LangGraph workflow
+        3. Generates the final report
+        4. Logs all operations for audit
+        
         Args:
-            subject: Name of person or entity to research
+            subject: Name of person or entity to research (required)
             context: Additional context about the subject
-            max_depth: Maximum search depth (defaults to config)
+            max_depth: Maximum search depth (defaults to config value)
             
         Returns:
-            Dict with research report and metadata
+            Dictionary containing:
+            - session_id: Unique session identifier
+            - success: Boolean indicating if research completed successfully
+            - report: Final research report (if successful)
+            - duration: Human-readable duration string
+            - metrics: Research metrics (queries, sources, entities, depth)
+            - error: Error message (if failed)
         """
+        # Validate input
+        if not subject or not subject.strip():
+            return {
+                "success": False,
+                "error": "Subject name is required and cannot be empty"
+            }
+        
         # Generate session ID
         session_id = generate_session_id()
         
@@ -87,15 +137,10 @@ class DeepResearchAgent:
         
         # Execute the graph
         try:
-            config = {
-                "recursion_limit": 100,  # Allow up to 100 node executions
-                "max_concurrency": 10
-            }
+            # Configure graph execution
+            config = self._build_execution_config()
             
-            # Add LangFuse callback if available
-            if self.langfuse_handler:
-                config["callbacks"] = [self.langfuse_handler]
-            
+            # Run the research workflow
             final_state = await self.graph.ainvoke(initial_state, config=config)
             
             # Extract report
@@ -156,6 +201,24 @@ class DeepResearchAgent:
                 "success": False,
                 "error": str(e)
             }
+    
+    def _build_execution_config(self) -> Dict[str, Any]:
+        """
+        Build configuration for graph execution.
+        
+        Returns:
+            Configuration dictionary for LangGraph
+        """
+        config = {
+            "recursion_limit": 100,  # Allow up to 100 node executions
+            "max_concurrency": 10
+        }
+        
+        # Add LangFuse callback if available
+        if self.langfuse_handler:
+            config["callbacks"] = [self.langfuse_handler]
+        
+        return config
     
     def _save_report(self, report, session_id: str) -> Path:
         """Save report to file."""

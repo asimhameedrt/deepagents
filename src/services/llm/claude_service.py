@@ -1,15 +1,23 @@
-"""Claude service for risk analysis and report synthesis."""
+"""
+Claude service for risk analysis and structured extraction.
 
-import json
+This module provides a high-level interface to Claude (Anthropic)
+for analysis tasks that benefit from Claude's reasoning capabilities:
+- Reflection and analysis
+- Query generation and refinement
+- Structured data extraction
+"""
+
 import time
-from typing import List, Optional, Type
+from typing import Optional, Type
 
-from anthropic import AsyncAnthropic, transform_schema
+from anthropic import AsyncAnthropic
 from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel
-from ...observability.detailed_logger import DetailedLogger
 
 from ...config.settings import settings
+from ...observability.detailed_logger import DetailedLogger
+
 
 class ClaudeService:
     """Service for interacting with Claude for analysis tasks."""
@@ -31,12 +39,13 @@ class ClaudeService:
     async def extract_structured(
         self,
         text: str,
-        schema: Type[BaseModel],
-        instruction: Optional[str] = None,
-        system_prompt: Optional[str] = None
+            schema: Type[BaseModel],
+            instruction: Optional[str] = None,
+            system_prompt: Optional[str] = None
     ) -> BaseModel:
         """
         Extract structured data from text using Claude's structured outputs.
+        
         Args:
             text: Text to extract from
             schema: Pydantic model schema to extract into
@@ -46,8 +55,6 @@ class ClaudeService:
         Returns:
             Instance of schema filled with extracted data
         """
-        print("1.😄################################################################################")
-        
         start_time = time.time()
         model = ChatAnthropic(
             model=self.model,
@@ -67,11 +74,12 @@ class ClaudeService:
             result: schema = structured_model.invoke(messages)
             duration_ms = (time.time() - start_time) * 1000
         except Exception as e:
-            print(f"🚀 [Claude] Exception in extract_structured: {e}")
+            if self._logger:
+                self._logger.log_error("extract_structured", e, {
+                    "schema": schema.__name__,
+                    "text_length": len(text)
+                })
             raise e
-        
-        # print log values before logging for extra visibility
-        print("🔍 Claude Extract Structured Information Logged successfully.")
 
         # Log LLM call if logger is available
         if self._logger:

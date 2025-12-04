@@ -25,9 +25,10 @@ async def generate_search_queries(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with pending queries
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
-    query_generator = QueryGenerator(session_id=state.get("session_id"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
     
+    query_generator = QueryGenerator(session_id=session_id)
     current_depth = state.get("current_depth", 0)
     
     try:

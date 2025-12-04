@@ -22,12 +22,16 @@ async def initialize_session(state: AgentState) -> AgentState:
     Returns:
         Fully initialized agent state ready for research workflow
     """
+    # Validate required fields
+    if not state.get("subject"):
+        raise ValueError("State must contain 'subject' field")
+    
     # Generate session ID if not provided
     session_id = state.get("session_id") or str(uuid.uuid4())
     
     logger = DetailedLogger(session_id)
     logger.log_info("Initializing research session", {
-        "subject": state.get("subject", "unknown"),
+        "subject": state["subject"],
         "session_id": session_id
     })
     

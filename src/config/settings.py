@@ -1,14 +1,27 @@
-"""Configuration settings for the Deep Research Agent."""
+"""
+Configuration settings for the Deep Research Agent.
+
+This module provides centralized configuration management using Pydantic Settings.
+All settings can be overridden via environment variables or .env file.
+"""
 
 from pathlib import Path
 from typing import Optional
 import os
 
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables and .env file."""
+    """
+    Application settings loaded from environment variables and .env file.
+    
+    All settings can be configured via:
+    1. Environment variables (highest priority)
+    2. .env file
+    3. Default values (lowest priority)
+    """
     
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -51,6 +64,54 @@ class Settings(BaseSettings):
     
     # Development
     debug: bool = False
+    
+    @field_validator('max_search_depth')
+    @classmethod
+    def validate_max_depth(cls, v: int) -> int:
+        """Validate max_search_depth is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("max_search_depth must be at least 1")
+        if v > 10:
+            raise ValueError("max_search_depth should not exceed 10 (performance concerns)")
+        return v
+    
+    @field_validator('max_queries_per_depth')
+    @classmethod
+    def validate_max_queries(cls, v: int) -> int:
+        """Validate max_queries_per_depth is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("max_queries_per_depth must be at least 1")
+        if v > 20:
+            raise ValueError("max_queries_per_depth should not exceed 20 (API rate limits)")
+        return v
+    
+    @field_validator('min_confidence_threshold')
+    @classmethod
+    def validate_confidence(cls, v: float) -> float:
+        """Validate min_confidence_threshold is between 0 and 1."""
+        if not 0.0 <= v <= 1.0:
+            raise ValueError("min_confidence_threshold must be between 0.0 and 1.0")
+        return v
+    
+    @field_validator('max_concurrent_searches')
+    @classmethod
+    def validate_concurrent(cls, v: int) -> int:
+        """Validate max_concurrent_searches is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("max_concurrent_searches must be at least 1")
+        if v > 5:
+            raise ValueError("max_concurrent_searches should not exceed 5 (API rate limits)")
+        return v
+    
+    @field_validator('stagnation_check_iterations')
+    @classmethod
+    def validate_stagnation(cls, v: int) -> int:
+        """Validate stagnation_check_iterations is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("stagnation_check_iterations must be at least 1")
+        if v > 5:
+            raise ValueError("stagnation_check_iterations should not exceed 5")
+        return v
     
     def __repr__(self) -> str:
         """Hide sensitive data in logs."""

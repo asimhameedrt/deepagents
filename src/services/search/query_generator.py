@@ -1,21 +1,42 @@
-"""Search query generation service using Claude for intelligent query refinement."""
+"""
+Search query generation service using Claude for intelligent query refinement.
 
-from typing import List, Optional, Set, Dict, Any
-from pydantic import BaseModel, Field
+This module handles both initial and refined query generation:
+- Initial queries: Broad coverage for baseline research
+- Refined queries: Targeted queries based on reflection analysis
+"""
+
+from typing import List, Optional, Dict, Any
 
 from ...config.settings import settings
 from ...services.llm.claude_service import ClaudeService
 from ...models.search_result import SearchQueriesList
+from ...prompts.query_generation import (
+    INITIAL_QUERY_SYSTEM_PROMPT,
+    REFINED_QUERY_SYSTEM_PROMPT,
+    build_initial_query_prompt,
+    build_refined_query_prompt,
+)
 
 
 class QueryGenerator:
-    """Generates search queries using Claude with reflection-based consecutive search strategy."""
+    """
+    Generates search queries using Claude with reflection-based strategy.
+    
+    This class implements a two-phase query generation approach:
+    1. Initial queries: Broad, comprehensive coverage
+    2. Refined queries: Targeted, reflection-guided queries
+    
+    The query strategy evolves based on what has been discovered,
+    prioritizing red flags and information gaps.
+    """
     
     def __init__(self, session_id: Optional[str] = None):
-        """Initialize the query generator.
+        """
+        Initialize the query generator.
         
         Args:
-            session_id: Session ID for logging
+            session_id: Session ID for logging and tracking
         """
         self.claude = ClaudeService(session_id=session_id)
         self.session_id = session_id
@@ -43,38 +64,16 @@ class QueryGenerator:
         Returns:
             List of initial search queries
         """
-        system_prompt = """You are an expert research strategist for Enhanced Due Diligence investigations.
-
-Your task is to generate initial search queries that provide broad coverage of a subject.
-
-For initial queries (Depth 0), focus on:
-1. Biographical basics (background, education, early career)
-2. Professional history (employment, roles, companies)
-3. Financial information (net worth, investments, major transactions)
-4. Legal/regulatory issues (lawsuits, investigations, compliance)
-5. Behavioral patterns (associations, decision-making, public statements)
-
-Generate specific, targeted queries that will retrieve high-quality information."""
-        
-        prompt = f"""# Initial Query Generation
-
-Subject: {subject}
-Context: {context or 'No additional context'}
-
-Generate {self.max_queries} initial search queries for comprehensive due diligence research on this subject.
-
-Queries should be:
-- Specific and targeted (not generic)
-- Diverse in coverage (different aspects of subject)
-- Optimized for web search (natural language, specific terms)
-- Focused on factual information (not opinion)
-
-Return queries as a JSON list."""
+        prompt = build_initial_query_prompt(
+            subject=subject,
+            context=context,
+            max_queries=self.max_queries
+        )
         
         result = await self.claude.extract_structured(
             text=prompt,
             schema=SearchQueriesList,
-            system_prompt=system_prompt
+            system_prompt=INITIAL_QUERY_SYSTEM_PROMPT
         )
         
         return result.get("queries", [f"{subject} background information"])
@@ -113,52 +112,22 @@ Return queries as a JSON list."""
         
         latest_reflection = reflection_memory[-1]
         
-        system_prompt = """You are an expert research strategist for Enhanced Due Diligence investigations.
-
-Your task is to generate refined search queries based on the query strategy from reflection analysis.
-
-Key principles:
-1. PRIORITIZE RED FLAGS: Focus on high-severity risks mentioned in strategy
-2. EXPLORE NEW ENTITIES: Target entities mentioned in strategy
-3. FOLLOW STRATEGY: Use the provided query strategy as your guide
-4. AVOID REPETITION: Do not repeat or closely paraphrase previous queries
-5. BE SPECIFIC: Target concrete facts, not general information
-
-Generate queries that will uncover deeper intelligence based on the strategy."""
-        
         # Get query strategy from reflection
         query_strategy = latest_reflection.get("query_strategy", "")
         
-        prompt = f"""# Refined Query Generation (Depth {current_depth})
-
-Subject: {subject}
-
-## Query Strategy from Reflection
-{query_strategy}
-
-## Context
-Total Queries Executed: {len(queries_executed)}
-Entities Discovered: {len(discovered_entities)}
-
-## Recent Queries (AVOID DUPLICATING)
-{chr(10).join(f"- {q}" for q in queries_executed[-10:])}
-
-## Your Task
-
-Generate {self.max_queries} NEW search queries based on the query strategy above.
-
-Requirements:
-1. Follow the priority topics and angles from the strategy
-2. Target specific entities, events, or relationships mentioned
-3. DO NOT repeat or closely paraphrase previous queries
-4. Make queries specific and targeted (not generic)
-
-Return as JSON list."""
+        prompt = build_refined_query_prompt(
+            subject=subject,
+            query_strategy=query_strategy,
+            queries_executed=queries_executed,
+            discovered_entities_count=len(discovered_entities),
+            current_depth=current_depth,
+            max_queries=self.max_queries
+        )
         
         result = await self.claude.extract_structured(
             text=prompt,
             schema=SearchQueriesList,
-            system_prompt=system_prompt
+            system_prompt=REFINED_QUERY_SYSTEM_PROMPT
         )
         
         return result.get("queries", [])

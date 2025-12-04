@@ -1,11 +1,19 @@
 # Solution Design Document
 ## Deep Research AI Agent
 
+**Status:** ✅ Fully Implemented  
+**Last Updated:** December 4, 2025
+
 ### 1. System Overview
 
-An autonomous research agent designed for Enhanced Due Diligence (EDD) investigations that conducts comprehensive research on individuals and entities by orchestrating multiple AI models through a graph-based workflow.
+A production-ready autonomous research agent designed for Enhanced Due Diligence (EDD) investigations that conducts comprehensive research on individuals and entities by orchestrating multiple AI models through a graph-based workflow.
 
-**Core Capability**: Consecutive search strategy where each research iteration builds upon previous discoveries to progressively uncover deeper intelligence.
+**Core Capabilities**:
+- **Reflection-Based Strategy**: Each iteration analyzes findings and guides next steps
+- **Entity Tracking**: Discovers and deduplicates entities with LLM-based reasoning
+- **Connection Mapping**: Builds relationship graphs and identifies patterns
+- **Intelligent Routing**: Three termination criteria (max depth, reflection, stagnation)
+- **Comprehensive Reporting**: 18-section due diligence reports with risk assessment
 
 ---
 
@@ -25,25 +33,42 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 
 #### 3.1 Workflow Graph (`src/agents/graph.py`)
 - **Pattern**: Directed graph with conditional routing
-- **Nodes**: 7 specialized processing nodes
+- **Nodes**: 6 specialized processing nodes (all fully implemented)
 - **Edges**: Linear and conditional transitions based on research progress
-- **Flow**: Initialize → Generate → Search → Analyze → Route → Connect/Continue → Synthesize
+- **Flow**: Initialize → Generate → Search → Analyze → Route → (Continue OR Finalize → Connect → Synthesize)
 
 #### 3.2 LLM Services Layer
 
 **OpenAI Service** (`src/services/llm/openai_service.py`)
 - Uses OpenAI Agents SDK with WebSearchTool
 - Structured output via Pydantic schemas
-- Handles: web search execution, entity merging, graph merging, connection mapping
-- Returns: `WebSearchOutput`, `EntityMergeOutput`, `GraphMergeOutput`, `ConnectionMappingOutput`
+- Handles: web search execution, entity merging, connection mapping, report synthesis
+- Returns: `WebSearchOutput`, `ConnectionMappingOutput`, `DueDiligenceReport`
 - Fast and reliable for complex structured outputs
 
 **Claude Service** (`src/services/llm/claude_service.py`)
-- Structured extraction using Claude's beta API
-- Optimized for simple schemas (text-heavy outputs)
+- Structured extraction using Claude's Messages API with response_format
+- Optimized for structured outputs with Pydantic models
 - Handles: reflection analysis, query generation
-- Returns: `ReflectionOutput` (simplified), `SearchQueriesList`
-- Fast processing with minimal structured complexity
+- Returns: `ReflectionOutput`, `SearchQueriesList`
+- Excellent for strategic thinking and analysis
+
+#### 3.2.1 Prompt Modules
+
+**Analysis Prompts** (`src/prompts/analysis.py`)
+- System prompt for reflection and analysis
+- Prompt builder for structured analysis summaries
+- Includes sections for: findings, entities, relationships, risk assessment, gaps
+
+**Synthesis Prompts** (`src/prompts/synthesis.py`)
+- Instructions for report generation
+- Prompt builder aggregating all research findings
+- Formats data for comprehensive due diligence report
+
+**Query Generation Prompts** (`src/prompts/query_generation.py`)
+- Initial query system prompt (broad coverage)
+- Refined query system prompt (strategy-driven)
+- Prompt builders for both initial and refined queries
 
 #### 3.3 State Models (`src/models/state.py`)
 
@@ -81,39 +106,66 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 
 #### Node Pipeline
 
-1. **Initialize** (`initialize.py`): Session setup, state initialization
-2. **Generate Queries** (`generate_queries.py`) - **Claude**: 
+1. **Initialize** (`initialize.py`) - ✅ Fully Implemented
+   - Session setup with unique session_id
+   - State initialization with defaults
+   - Timestamp and metric initialization
+
+2. **Generate Queries** (`generate_queries.py`) - ✅ Fully Implemented - **Claude**
    - Depth 0: Broad queries (biographical, professional, financial, legal)
-   - Depth N: Uses textual `query_strategy` from reflection for refinement
-3. **Execute Search** (`web_search.py`) - **OpenAI**:
+   - Depth 1+: Uses `query_strategy` from latest reflection for refinement
+   - Prioritizes red flags and critical gaps
+   - Deduplicates against `queries_executed`
+   - Returns list of targeted queries
+
+3. **Execute Search** (`web_search.py`) - ✅ Fully Implemented - **OpenAI**
    - Parallel searches via OpenAI Agents SDK with WebSearchTool
-   - Collects sources and search summaries
-   - Updates search_memory
-4. **Analyze and Reflect** (`analyze.py`) - **Claude**:
-   - Simplified schema for fast processing
-   - Outputs: `analysis_summary` (structured text), `should_continue`, `reasoning`, `query_strategy`
-   - Text includes: findings, entities, relationships, risk assessment, gaps, source notes
-5. **Merge Entities** (utility function) - **OpenAI**:
+   - Structured extraction of search results
+   - Source tracking (URLs + titles)
+   - Updates `search_memory` with full results
+
+4. **Analyze and Reflect** (`analyze.py`) - ✅ Fully Implemented - **Claude**
+   - Structured analysis using `ReflectionOutput` Pydantic model
+   - Outputs: `analysis_summary` (multi-section structured text)
+   - Decision: `should_continue` (bool) + `reasoning`
+   - Strategy: `query_strategy` for next iteration
+   - Increments depth after analysis
+
+5. **Entity Merging** (utility in analyze node) - ✅ Fully Implemented - **OpenAI**
    - Extracts entities from `analysis_summary` text
-   - Merges with existing entities, handles deduplication
-6. **Map Connections** (`connect.py`) - **OpenAI**:
-   - Builds entity graph (nodes + edges)
-   - Identifies patterns, flags suspicious connections
-   - Assesses entity importance
-7. **Synthesize Report** (`synthesize.py`) - **OpenAI**:
-   - Comprehensive due diligence report
-   - 18 sections including risk assessment, entity analysis, recommendations
+   - Merges with existing entities via LLM reasoning
+   - Handles variations and aliases
+   - Updates `discovered_entities`
+
+6. **Map Connections** (`connect.py`) - ✅ Fully Implemented - **OpenAI**
+   - Builds/updates entity graph (nodes + edges)
+   - Pattern detection (recurring connections)
+   - Flags suspicious patterns
+   - Assesses entity importance with reasoning
+   - Returns `ConnectionMappingOutput`
+
+7. **Synthesize Report** (`synthesize.py`) - ✅ Fully Implemented - **OpenAI**
+   - Comprehensive due diligence report using `DueDiligenceReport` model
+   - 18 sections: executive summary, risk assessment, detailed findings, recommendations
+   - Adds metadata (models used, statistics, timing)
+   - Saves to `reports/{session_id}_report.json`
 
 #### Conditional Routing (`src/agents/edges/routing.py`)
 
-**Decision Points** (fully implemented):
-- `should_continue_research`: 
-  - Checks: max_depth, reflection decision, stagnation
-  - Routes to: continue_search / analyze / finish
-- `has_new_queries`: 
-  - Checks if pending_queries exist after refinement
-  - Routes to: search_more / synthesize
-- `needs_deeper_research`: (Optional, not currently used in main flow)
+**Primary Decision Point** - ✅ Fully Implemented:
+
+`should_continue_research()`:
+- **Decision Criteria** (checked in order):
+  1. Max depth reached? → **finalize** (map connections → synthesize)
+  2. Reflection recommends stop? → **finalize** (map connections → synthesize)
+  3. Stagnation detected (no new entities in N iterations)? → **finalize**
+  4. Otherwise → **continue_search** (generate more queries)
+
+**Key Implementation Details**:
+- Depth is incremented in `analyze_and_reflect` node BEFORE routing
+- All finalization routes through `map_connections` before synthesis
+- Termination reason is logged in state
+- Example: max_depth=3 runs iterations at depths 0, 1, 2 (total 3)
 
 ---
 
@@ -162,29 +214,60 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 
 ### 7. Current Implementation State
 
-#### ✅ Fully Implemented
-- LangGraph workflow structure with 7 nodes
-- OpenAI web search integration via Agents SDK
-- **Claude reflection with simplified schema (fast, reliable)**
-- **OpenAI entity extraction and merging (structured)**
-- **OpenAI graph construction and merging**
-- **Connection mapping with pattern detection**
-- Query refinement using textual strategy
-- Intelligent routing (3 decision functions)
-- **Comprehensive report synthesis**
-- Search memory collection from searches
-- Structured output schemas (simplified for performance)
-- Session management and state tracking
-- Audit logging infrastructure
-- Configuration management via Pydantic Settings
-- Parallel search execution
+#### ✅ Fully Implemented (Production-Ready)
 
-#### ⚡ Performance Optimizations
-- Simplified Claude schemas for speed (text-based)
-- OpenAI for all complex structured outputs
-- No confidence calculation overhead
-- Textual query strategy (natural language)
-- Entity extraction during merge (not reflection)
+**Core Workflow**:
+- [x] LangGraph workflow with 6 nodes (all implemented)
+- [x] Complete state management with AgentState
+- [x] Session initialization and tracking
+- [x] Intelligent routing with 3 termination criteria
+
+**Query Generation**:
+- [x] Initial query generation (broad coverage)
+- [x] Refined query generation (strategy-driven)
+- [x] Query deduplication
+- [x] Red flag prioritization
+
+**Search & Analysis**:
+- [x] OpenAI web search with Agents SDK
+- [x] Parallel async search execution
+- [x] Claude reflection with ReflectionOutput model
+- [x] Entity extraction and LLM-based merging
+- [x] Multi-section analysis summaries
+- [x] Gap analysis tracking
+
+**Entity & Connection Management**:
+- [x] Entity discovery and deduplication
+- [x] Entity graph construction (nodes + edges)
+- [x] Pattern detection
+- [x] Suspicious connection flagging
+- [x] Entity importance assessment
+
+**Report Generation**:
+- [x] Comprehensive 18-section due diligence report
+- [x] Risk assessment with severity levels
+- [x] Evidence strength evaluation
+- [x] Recommendations and next steps
+- [x] Metadata with statistics and timing
+
+**Observability & Configuration**:
+- [x] Dual logging system (audit + detailed)
+- [x] JSONL audit trail per session
+- [x] Pydantic-based configuration with validation
+- [x] Environment variable management
+
+**Prompt Architecture**:
+- [x] Modular prompt modules (analysis, synthesis, query generation)
+- [x] System prompts + prompt builders
+- [x] Structured instructions for each task
+
+#### ⚡ Performance & Design Optimizations
+- Multi-model approach (Claude for strategy, OpenAI for structure)
+- Pydantic models for type safety and validation
+- Async parallel search execution
+- Depth increment after analysis (before routing)
+- All finalization routes through connection mapping
+- Stagnation detection prevents wasted iterations
 
 ---
 
@@ -217,23 +300,82 @@ An autonomous research agent designed for Enhanced Due Diligence (EDD) investiga
 ### 9. Data Flow
 
 ```
-Subject Input
+Subject Input + Context
     ↓
-Initialize State
-    ↓
-Generate Queries (OpenAI) ──→ ["query1", "query2", ...]
-    ↓
-Execute Searches (OpenAI WebSearch) ──→ Sources + Search Memory
-    ↓
-Analyze and Reflect (Claude) [PLACEHOLDER]
-    ↓
-Decision Point: Continue? Analyze? Finish?
-    ↓
-    ├──→ Continue: Loop back to Generate Queries
-    ├──→ Analyze: Map Connections → Refine → Search More
-    └──→ Finish: Synthesize Report
-                      ↓
-                  Final Report
+┌─────────────────────────────────────────────────┐
+│ Initialize Session                              │
+│ - Generate session_id                           │
+│ - Initialize state with defaults                │
+│ - Set start_time, depth=0                       │
+└─────────────────┬───────────────────────────────┘
+                  ↓
+┌──────────────────────────────────────────────────────────────┐
+│  ITERATION LOOP                                              │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Generate Queries (Claude)                          │    │
+│  │ • Depth 0: Initial broad coverage                  │    │
+│  │ • Depth 1+: Refined based on query_strategy        │    │
+│  │ • Output: List[str] queries                        │    │
+│  └──────────────────────┬─────────────────────────────┘    │
+│                         ↓                                    │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Execute Searches (OpenAI)                          │    │
+│  │ • Parallel web searches (async)                    │    │
+│  │ • WebSearchOutput per query                        │    │
+│  │ • Updates search_memory                            │    │
+│  └──────────────────────┬─────────────────────────────┘    │
+│                         ↓                                    │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Analyze & Reflect (Claude)                         │    │
+│  │ • ReflectionOutput with analysis_summary           │    │
+│  │ • Entity extraction + merging (OpenAI)             │    │
+│  │ • Decision: should_continue?                       │    │
+│  │ • Query strategy for next iteration                │    │
+│  │ • Increments depth++                               │    │
+│  └──────────────────────┬─────────────────────────────┘    │
+│                         ↓                                    │
+│              ┌──────────────────┐                           │
+│              │ Routing Decision │                           │
+│              └────────┬─────────┘                           │
+│                       │                                      │
+│         ┌─────────────┼─────────────┐                       │
+│         │             │             │                        │
+│    Max depth?    Reflection?   Stagnation?                  │
+│         │             │             │                        │
+│         No            No            No                       │
+│         │             │             │                        │
+│         └─────────────┴─────────────┘                       │
+│                       │                                      │
+│                  CONTINUE_SEARCH                             │
+│                       │                                      │
+│                       └──────────────────────┐               │
+│                                              │               │
+└──────────────────────────────────────────────┼───────────────┘
+                                               │
+                                          Loop Back
+                                               │
+                    ┌──────────────────────────┘
+                    │
+                    │ (Any condition true)
+                    ↓
+              FINALIZE PATH
+                    ↓
+       ┌────────────────────────┐
+       │ Map Connections (OpenAI)│
+       │ • Build entity graph    │
+       │ • Identify patterns     │
+       │ • Flag suspicious       │
+       └────────┬───────────────┘
+                ↓
+       ┌────────────────────────┐
+       │ Synthesize Report (OpenAI)│
+       │ • 18-section report     │
+       │ • Add metadata          │
+       │ • Save JSON file        │
+       └────────┬───────────────┘
+                ↓
+        Final Report JSON
 ```
 
 ---
@@ -266,22 +408,39 @@ The architecture is designed for extension:
 
 ### 12. Limitations & Considerations
 
-**Current State**:
-- Workflow structure exists but key analysis nodes are placeholders
-- Query generation is simplified (no true consecutive refinement yet)
-- No risk assessment or connection mapping implemented
-- Report generation is minimal
+**Known Limitations**:
 
-**Architectural Readiness**:
-- State management supports full implementation
-- Search memory collection enables intelligent routing
-- Multi-model infrastructure is in place
-- Observability supports production deployment
+1. **Web Search Dependency**
+   - Relies on OpenAI's WebSearchTool
+   - Limited to publicly accessible information
+   - No access to paywalled content or databases
 
-**Technical Debt**:
-- Routing logic needs implementation based on search memory
-- Claude service needs integration for analysis tasks
-- Prompt engineering for analysis and synthesis required
+2. **LLM Costs**
+   - Multiple LLM calls per iteration (Claude + OpenAI)
+   - Cost scales with search depth and queries per iteration
+   - Mitigation: Configurable limits via settings
+
+3. **Context Window Limits**
+   - Long reflection histories may approach context limits
+   - Entity graphs can grow large with many iterations
+   - Mitigation: Summary compression for older iterations (future enhancement)
+
+4. **Entity Extraction Accuracy**
+   - LLM-based extraction depends on model quality
+   - May miss subtle relationships or aliases
+   - Mitigation: Iterative refinement across multiple searches
+
+5. **Stagnation Detection**
+   - Based on entity count (may not detect quality stagnation)
+   - Could stop prematurely if entity discovery slows
+   - Mitigation: Configurable threshold via settings
+
+**Production Considerations**:
+- Rate limiting: Respect API rate limits via `max_concurrent_searches`
+- Error handling: All nodes have try-catch with error logging
+- Audit compliance: JSONL logs provide immutable trail
+- Cost monitoring: Track token usage via detailed logger
+- Testing: Evaluation framework with test personas
 
 ---
 
@@ -304,39 +463,109 @@ The architecture is designed for extension:
 ```
 src/
 ├── agents/
-│   ├── graph.py              # Workflow definition
-│   ├── nodes/                # Processing nodes
-│   │   ├── initialize.py
-│   │   ├── generate_queries.py
-│   │   ├── web_search.py
-│   │   ├── analyze.py        # [PLACEHOLDER]
-│   │   ├── connect.py        # [PLACEHOLDER]
-│   │   └── synthesize.py     # [PLACEHOLDER]
+│   ├── graph.py                    # ✅ LangGraph workflow definition
+│   ├── nodes/                      # Processing nodes (all implemented)
+│   │   ├── initialize.py           # ✅ Session setup
+│   │   ├── generate_queries.py     # ✅ Claude query generation
+│   │   ├── web_search.py           # ✅ OpenAI parallel web search
+│   │   ├── analyze.py              # ✅ Claude reflection + entity merge
+│   │   ├── connect.py              # ✅ OpenAI connection mapping
+│   │   └── synthesize.py           # ✅ OpenAI report synthesis
 │   └── edges/
-│       └── routing.py        # [PLACEHOLDER]
+│       └── routing.py              # ✅ Conditional routing logic
 ├── services/
 │   ├── llm/
-│   │   ├── openai_service.py # Web search + extraction
-│   │   └── claude_service.py # Generic structured extraction
+│   │   ├── openai_service.py       # ✅ Agents SDK + structured output
+│   │   └── claude_service.py       # ✅ Messages API + structured extraction
 │   └── search/
-│       ├── query_generator.py
-│       └── web_search.py
+│       ├── query_generator.py      # ✅ Query generation service
+│       └── web_search.py           # ✅ Search execution service
 ├── models/
-│   ├── state.py              # State definitions
-│   └── search_result.py      # Pydantic schemas
-├── prompts/
-│   └── web_search.py         # Prompt builders
+│   ├── state.py                    # ✅ AgentState + SearchIterationData
+│   └── search_result.py            # ✅ Pydantic schemas (6 models)
+├── prompts/                        # ✅ Modular prompt architecture
+│   ├── analysis.py                 # ✅ Reflection prompts
+│   ├── synthesis.py                # ✅ Report synthesis prompts
+│   ├── query_generation.py         # ✅ Query generation prompts
+│   └── web_search.py               # ✅ Web search prompts
+├── utils/
+│   ├── research_utils.py           # ✅ Entity merge, stagnation check
+│   └── helpers.py                  # ✅ Utility functions
 ├── observability/
-│   ├── audit_logger.py
-│   └── detailed_logger.py
+│   ├── audit_logger.py             # ✅ JSONL audit trail
+│   └── detailed_logger.py          # ✅ Detailed operational logs
 ├── config/
-│   └── settings.py
-└── main.py                   # Entry point
+│   └── settings.py                 # ✅ Pydantic Settings with validation
+└── main.py                         # ✅ CLI entry point
+
+tests/
+├── evaluation/
+│   ├── EVALUATION_GUIDE.md         # ✅ Evaluation framework
+│   ├── evaluation_comparator.py   # ✅ Result comparison tools
+│   ├── test_persona_recall.py     # ✅ Persona testing
+│   └── personas/                   # ✅ Test subjects (3 personas)
+│       ├── sam_bankman_fried.json
+│       ├── elon_musk.json
+│       └── isabel_dos_santos.json
+├── test_anthropic.py
+├── test_openai_agents.py
+└── conftest.py
+
+docs/
+├── IMPLEMENTATION_COMPLETE.md      # ✅ Implementation summary
+├── IMPLEMENTATION_SUMMARY.md       # ✅ Technical details
+├── SOLUTION_DESIGN.md              # ✅ This file - architecture
+├── OPTIMIZATION_CHANGES.md         # ✅ Performance optimizations
+├── QUICK_START.md                  # ✅ Quick start guide
+└── problem_statement.md            # ✅ Original requirements
 ```
+
+**Total Files**: 22 implementation files + documentation + tests
 
 ---
 
-**Document Version**: 1.0  
-**Date**: December 2, 2025  
-**Status**: Reflects current implementation state (incomplete/in-progress)
+### 15. Testing & Validation
+
+**Evaluation Framework**:
+- Test personas for validation (Sam Bankman-Fried, Elon Musk, Isabel dos Santos)
+- Evaluation comparator for result analysis
+- Persona recall testing
+
+**Manual Testing**:
+```bash
+# Quick test (2-3 iterations)
+python -m src.main "Test Subject" --context "Context" --max-depth 2
+
+# Full investigation (5+ iterations)
+python -m src.main "Subject Name" --context "Info" --max-depth 5
+```
+
+**Validation Points**:
+- ✅ Pydantic models validate all LLM outputs
+- ✅ Type hints throughout codebase
+- ✅ Error handling in all nodes
+- ✅ Audit trail for compliance
+- ✅ Configuration validation on startup
+
+---
+
+### 16. Future Enhancements
+
+**Potential Improvements**:
+- [ ] PDF/HTML report generation (currently JSON only)
+- [ ] Semantic search for better query deduplication
+- [ ] Vector database for search result caching
+- [ ] Multi-language support for international subjects
+- [ ] Real-time streaming output to UI
+- [ ] Web UI dashboard for interactive research
+- [ ] Advanced graph visualization
+- [ ] Report comparison across multiple subjects
+- [ ] Automated fact verification with multiple sources
+- [ ] Integration with specialized databases (legal, financial, etc.)
+
+---
+
+**Document Version**: 2.0  
+**Date**: December 4, 2025  
+**Status**: ✅ Reflects fully implemented production-ready system
 

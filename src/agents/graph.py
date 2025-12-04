@@ -1,4 +1,4 @@
-"""LangGraph workflow definition."""
+"""LangGraph workflow definition for deep research agent."""
 
 from langgraph.graph import StateGraph, END
 
@@ -9,39 +9,66 @@ from .nodes.generate_queries import generate_search_queries
 from .nodes.connect import map_connections
 from .nodes.analyze import analyze_and_reflect
 from .nodes.synthesize import synthesize_report
-from .edges.routing import should_continue_research, has_new_queries
+from .edges.routing import should_continue_research
 
 def create_research_graph() -> StateGraph:
     """
     Create the LangGraph workflow for deep research.
     
     The workflow implements a streamlined search and analysis strategy:
-    1. Initialize session
-    2. Generate initial queries (based on subject and context)
-    3. Execute searches
-    4. Analyze and reflect on results
-    5. Decision: continue searching, refine, or finish
-    6. If continue: generate more queries and loop back
-    7. If refine: map connections and generate refined queries
-    8. If more queries: search more
-    9. Synthesize final report
+    1. Initialize session - Set up state with defaults
+    2. Generate initial queries - Create broad search queries
+    3. Execute searches - Parallel web searches
+    4. Analyze and reflect - Extract insights and assess progress
+    5. Decision point - Continue or finalize based on:
+       - Max depth reached
+       - Reflection recommendation
+       - Stagnation detection
+    6. If continue: generate refined queries and loop back to step 3
+    7. If finalize: map entity connections and synthesize final report
+    
+    The finalization path ensures entity graph is always populated before synthesis.
     
     Returns:
         Compiled StateGraph
     """
-    # Create the graph
+    # Create the graph with proper state type
     workflow = StateGraph(AgentState)
     
-    # Add nodes
+    # Add nodes in logical execution order
+    _add_workflow_nodes(workflow)
+    
+    # Define edges between nodes
+    _add_workflow_edges(workflow)
+    
+    # Set entry point
+    workflow.set_entry_point("initialize")
+    
+    return workflow.compile()
+
+
+def _add_workflow_nodes(workflow: StateGraph) -> None:
+    """
+    Add all workflow nodes to the graph.
+    
+    Args:
+        workflow: StateGraph instance to add nodes to
+    """
     workflow.add_node("initialize", initialize_session)
     workflow.add_node("generate_queries", generate_search_queries)
     workflow.add_node("execute_search", execute_web_search)
     workflow.add_node("analyze_and_reflect", analyze_and_reflect)
     workflow.add_node("map_connections", map_connections)
-    workflow.add_node("refine_queries", generate_search_queries)  # Same as generate but based on findings
     workflow.add_node("synthesize_report", synthesize_report)
+
+
+def _add_workflow_edges(workflow: StateGraph) -> None:
+    """
+    Add all edges (transitions) between nodes.
     
-    # Define edges
+    Args:
+        workflow: StateGraph instance to add edges to
+    """
     # Linear flow from start through initial search
     workflow.add_edge("initialize", "generate_queries")
     workflow.add_edge("generate_queries", "execute_search")
@@ -53,31 +80,15 @@ def create_research_graph() -> StateGraph:
         should_continue_research,
         {
             "continue_search": "generate_queries",  # Loop back for more searches
-            "analyze": "map_connections",  # Move to deeper analysis
-            "finish": "synthesize_report"  # Skip to report generation
+            "finalize": "map_connections",  # Map connections then synthesize
         }
     )
     
-    # Connection mapping flow
-    workflow.add_edge("map_connections", "refine_queries")
-    
-    # Decision after refining queries
-    workflow.add_conditional_edges(
-        "refine_queries",
-        has_new_queries,
-        {
-            "search_more": "execute_search",  # Execute refined searches
-            "synthesize": "synthesize_report"  # Done searching, generate report
-        }
-    )
+    # Connection mapping always leads to synthesis (when finalizing)
+    workflow.add_edge("map_connections", "synthesize_report")
     
     # Report synthesis ends the workflow
     workflow.add_edge("synthesize_report", END)
-    
-    # Set entry point
-    workflow.set_entry_point("initialize")
-    
-    return workflow.compile()
 
 
 # Create the compiled graph

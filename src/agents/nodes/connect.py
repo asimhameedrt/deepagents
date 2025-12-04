@@ -24,10 +24,11 @@ async def map_connections(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with connection mappings and graph
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
     logger.log_info("Starting connection mapping analysis")
     
-    # Check if we have entities to map
+    # Validate we have entities to map
     if not state.get("discovered_entities"):
         logger.log_warning("No entities discovered yet, skipping connection mapping")
         return state
