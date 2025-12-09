@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 from ...models.state import AgentState
 from ...config.settings import settings
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 
 
 @log_node_execution
@@ -84,7 +84,6 @@ async def initialize_session(state: AgentState) -> AgentState:
         "session_id": session_id,
         "subject": state["subject"],
         "max_depth": state["max_depth"],
-        "confidence_threshold": settings.min_confidence_threshold,
         "stagnation_check_iterations": settings.stagnation_check_iterations
     })
     

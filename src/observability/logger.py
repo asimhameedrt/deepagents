@@ -1,8 +1,6 @@
 """
-Detailed logger for comprehensive debugging and monitoring.
-
 This module provides a structured JSON logging system for tracking
-all agent operations, LLM calls, errors, and state transitions.
+all agent operations, LLM calls, errors, state transitions, and compliance events.
 """
 
 import json

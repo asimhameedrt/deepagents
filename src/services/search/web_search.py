@@ -28,7 +28,7 @@ class SearchExecutor:
         Args:
             session_id: Session ID for logging and tracking
         """
-        self.openai = OpenAIService(session_id=session_id)
+        self.openai = OpenAIService(session_id=session_id, operation="web_search")
     
     async def search(
         self, 

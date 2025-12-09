@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepAgents Research Workflow</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 12mm;
+            position: relative;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 6mm;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 4mm;
+            background: linear-gradient(to bottom, transparent 0%, rgba(37, 99, 235, 0.02) 100%);
+            margin-left: -12mm;
+            margin-right: -12mm;
+            margin-top: -12mm;
+            padding: 8mm 12mm 4mm 12mm;
+        }
+        
+        .header h1 {
+            font-size: 26pt;
+            color: #1e3a8a;
+            margin-bottom: 2mm;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            font-size: 10pt;
+            color: #475569;
+            font-weight: 600;
+        }
+        
+        .header .subtitle {
+            font-size: 8.5pt;
+            color: #64748b;
+            margin-top: 2mm;
+            font-weight: 500;
+        }
+        
+        .workflow {
+            position: relative;
+            height: 265mm;
+            margin-top: 4mm;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Node Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .node:hover rect,
+        .node:hover ellipse {
+            filter: brightness(0.95);
+            stroke-width: 3;
+        }
+        
+        .node rect,
+        .node ellipse {
+            stroke-width: 2.5;
+        }
+        
+        /* Different node types with gradients */
+        .node-input {
+            fill: url(#grad-input);
+            stroke: #059669;
+        }
+        
+        .node-init {
+            fill: url(#grad-init);
+            stroke: #0891b2;
+        }
+        
+        .node-claude {
+            fill: url(#grad-claude);
+            stroke: #d97706;
+        }
+        
+        .node-openai {
+            fill: url(#grad-openai);
+            stroke: #2563eb;
+        }
+        
+        .node-hybrid {
+            fill: url(#grad-hybrid);
+            stroke: #7c3aed;
+        }
+        
+        .node-decision {
+            fill: url(#grad-decision);
+            stroke: #dc2626;
+            stroke-width: 3.5;
+            filter: drop-shadow(0 3px 6px rgba(220, 38, 38, 0.3));
+        }
+        
+        .node-output {
+            fill: url(#grad-output);
+            stroke: #0d9488;
+        }
+        
+        .node-end {
+            fill: url(#grad-end);
+            stroke: #475569;
+        }
+        
+        .node text {
+            fill: white;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .node-title {
+            font-size: 10pt;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+        
+        .node-subtitle {
+            font-size: 7.5pt;
+            font-weight: 600;
+            opacity: 0.93;
+        }
+        
+        .node-detail {
+            font-size: 7pt;
+            font-weight: 400;
+            opacity: 0.88;
+        }
+        
+        /* Add drop shadows to nodes */
+        .node rect,
+        .node ellipse,
+        .node path {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+        }
+        
+        /* Arrow Styles */
+        .arrow {
+            stroke: #475569;
+            stroke-width: 3;
+            fill: none;
+        }
+        
+        .arrow-continue {
+            stroke: #10b981;
+            stroke-width: 3.5;
+            stroke-dasharray: 8,4;
+            filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.3));
+        }
+        
+        .arrow-finalize {
+            stroke: #ef4444;
+            stroke-width: 3.5;
+            filter: drop-shadow(0 1px 2px rgba(239, 68, 68, 0.3));
+        }
+        
+        .arrow-label {
+            font-size: 8pt;
+            font-weight: 800;
+            fill: #1e293b;
+        }
+        
+        .arrow-sublabel {
+            font-size: 6.5pt;
+            font-weight: 700;
+            fill: #475569;
+        }
+        
+        /* Loop indicator */
+        .loop-box {
+            fill: rgba(139, 92, 246, 0.05);
+            stroke: #8b5cf6;
+            stroke-width: 3;
+            stroke-dasharray: 10,5;
+            rx: 8;
+            filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.15));
+        }
+        
+        .loop-label {
+            font-size: 9pt;
+            font-weight: 900;
+            fill: #6d28d9;
+            letter-spacing: 0.5px;
+        }
+        
+        .loop-label-bg {
+            fill: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            fill: #f5f3ff;
+            stroke: #8b5cf6;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.2));
+        }
+        
+        /* State indicators */
+        .state-box {
+            fill: #eff6ff;
+            stroke: #3b82f6;
+            stroke-width: 2;
+            stroke-dasharray: 5,3;
+            rx: 6;
+            filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.25));
+        }
+        
+        .state-label {
+            font-size: 6.8pt;
+            fill: #1e40af;
+            font-weight: 700;
+        }
+        
+        .state-label-title {
+            font-size: 7.5pt;
+            fill: #1e3a8a;
+            font-weight: 900;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 8mm;
+            left: 12mm;
+            right: 12mm;
+            text-align: center;
+            font-size: 7pt;
+            color: #64748b;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 3mm;
+            line-height: 1.6;
+        }
+        
+        .footer-title {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #1e40af;
+            margin-bottom: 2mm;
+            letter-spacing: 0.3px;
+        }
+        
+        .footer-section {
+            display: inline-block;
+            margin: 0 8px;
+            padding: 0 8px;
+            border-left: 2px solid #cbd5e1;
+        }
+        
+        .footer-section:first-child {
+            border-left: none;
+        }
+        
+        .footer-label {
+            font-weight: 700;
+            color: #475569;
+        }
+        
+        .footer-value {
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <h1>DeepAgents Research Workflow</h1>
+        </div>
+        
+        <div class="workflow">
+            <svg viewBox="0 0 650 870" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Arrow markers -->
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#475569" />
+                    </marker>
+                    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
+                    </marker>
+                    <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#ef4444" />
+                    </marker>
+                    
+                    <!-- Gradient definitions for nodes -->
+                    <linearGradient id="grad-input" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-init" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-claude" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-openai" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-hybrid" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-decision" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-output" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0d9488;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="grad-end" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#64748b;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- User Input -->
+                <g class="node">
+                    <ellipse class="node-input" cx="325" cy="30" rx="105" ry="27"/>
+                    <text class="node-title" x="325" y="32" text-anchor="middle">👤 USER QUERY</text>
+                    <text class="node-detail" x="325" y="43" text-anchor="middle">Subject + Context</text>
+                </g>
+                
+                <path class="arrow" d="M 325 55 L 325 85" marker-end="url(#arrowhead)" fill="none"/>
+                
+                <!-- Initialize Session -->
+                <g class="node">
+                    <rect class="node-init" x="195" y="85" width="260" height="50"/>
+                    <text class="node-title" x="325" y="104" text-anchor="middle">⚡ 1. INITIALIZE SESSION</text>
+                    <text class="node-subtitle" x="325" y="118" text-anchor="middle">Create AgentState</text>
+                    <text class="node-detail" x="325" y="128" text-anchor="middle">session_id, metrics, start_time</text>
+                </g>
+                
+                <!-- State update indicator -->
+                <rect class="state-box" x="465" y="92" width="100" height="38"/>
+                <text class="state-label-title" x="515" y="103" text-anchor="middle">State Created</text>
+                <text class="state-label" x="515" y="114" text-anchor="middle">depth = 0</text>
+                <text class="state-label" x="515" y="123" text-anchor="middle">entities = { }</text>
+                
+                <path class="arrow" d="M 325 135 L 325 165" marker-end="url(#arrowhead)" fill="none"/>
+                
+                <!-- ITERATIVE LOOP BOX START -->
+                <rect class="loop-box" x="75" y="160" width="500" height="450"/>
+                <rect class="loop-label-bg" x="85" y="150" width="235" height="24" rx="4"/>
+                <text class="loop-label" x="202" y="167" text-anchor="middle">⟳ ITERATIVE RESEARCH LOOP</text>
+                
+                <!-- Generate Queries (Claude) -->
+                <g class="node">
+                    <rect class="node-claude" x="165" y="195" width="320" height="65"/>
+                    <text class="node-title" x="325" y="217" text-anchor="middle">🤔 2. GENERATE QUERIES</text>
+                    <text class="node-subtitle" x="325" y="231" text-anchor="middle">🟠 Claude Sonnet 4.5 | Strategic Reasoning</text>
+                    <text class="node-detail" x="325" y="242" text-anchor="middle">Depth 0: Broad coverage queries</text>
+                    <text class="node-detail" x="325" y="252" text-anchor="middle">Depth 1+: Refined queries from reflection insights</text>
+                </g>
+                
+                <!-- State update -->
+                <rect class="state-box" x="495" y="208" width="105" height="42"/>
+                <text class="state-label-title" x="547" y="219" text-anchor="middle">📝 State Update</text>
+                <text class="state-label" x="547" y="230" text-anchor="middle">pending_queries</text>
+                <text class="state-label" x="547" y="240" text-anchor="middle">= [q1, q2, q3...]</text>
+                
+                <path class="arrow" d="M 325 260 L 325 290" marker-end="url(#arrowhead)" fill="none"/>
+                <text class="arrow-sublabel" x="335" y="277" fill="#475569">10-15 queries</text>
+                
+                <!-- Execute Web Search (OpenAI) -->
+                <g class="node">
+                    <rect class="node-openai" x="145" y="290" width="360" height="65"/>
+                    <text class="node-title" x="325" y="312" text-anchor="middle">🔍 3. EXECUTE WEB SEARCH</text>
+                    <text class="node-subtitle" x="325" y="326" text-anchor="middle">🔵 OpenAI GPT-4o | Agents SDK + WebSearchTool</text>
+                    <text class="node-detail" x="325" y="337" text-anchor="middle">Parallel async searches (5 concurrent)</text>
+                    <text class="node-detail" x="325" y="347" text-anchor="middle">Extract structured data: URLs, snippets, relevance</text>
+                </g>
+                
+                <!-- State update -->
+                <rect class="state-box" x="515" y="303" width="105" height="42"/>
+                <text class="state-label-title" x="567" y="314" text-anchor="middle">📝 State Update</text>
+                <text class="state-label" x="567" y="325" text-anchor="middle">search_memory[]</text>
+                <text class="state-label" x="567" y="335" text-anchor="middle">queries_executed[]</text>
+                
+                <path class="arrow" d="M 325 355 L 325 385" marker-end="url(#arrowhead)" fill="none"/>
+                <text class="arrow-sublabel" x="335" y="372" fill="#475569">100-150 sources</text>
+                
+                <!-- Analyze & Reflect (Hybrid) -->
+                <g class="node">
+                    <rect class="node-hybrid" x="125" y="385" width="400" height="90"/>
+                    <text class="node-title" x="325" y="408" text-anchor="middle">🧠 4. ANALYZE & REFLECT</text>
+                    <text class="node-subtitle" x="325" y="422" text-anchor="middle">🟣 Hybrid: Claude (Reflection) + GPT-4o (Entity Extraction)</text>
+                    <text class="node-detail" x="325" y="434" text-anchor="middle">• Reflection: Assess findings, identify gaps, recommend next steps</text>
+                    <text class="node-detail" x="325" y="445" text-anchor="middle">• Entity Extraction: Discover entities, deduplicate, merge</text>
+                    <text class="node-detail" x="325" y="456" text-anchor="middle">• Progress Check: New entities? Information coverage?</text>
+                    <text class="node-detail" x="325" y="467" text-anchor="middle">• Depth Increment: depth++</text>
+                </g>
+                
+                <!-- State update -->
+                <rect class="state-box" x="535" y="398" width="110" height="64"/>
+                <text class="state-label-title" x="590" y="410" text-anchor="middle">📝 State Update</text>
+                <text class="state-label" x="590" y="421" text-anchor="middle">reflection_memory[]</text>
+                <text class="state-label" x="590" y="432" text-anchor="middle">discovered_entities{}</text>
+                <text class="state-label" x="590" y="443" text-anchor="middle">risk_indicators{}</text>
+                <text class="state-label" x="590" y="454" text-anchor="middle" style="fill:#ef4444;font-weight:800;">depth++</text>
+                
+                <path class="arrow" d="M 325 475 L 325 500" marker-end="url(#arrowhead)" fill="none"/>
+                
+                <!-- Routing Decision (Diamond) -->
+                <g class="node">
+                    <path class="node-decision" d="M 325 500 L 425 550 L 325 600 L 225 550 Z"/>
+                    <text class="node-title" x="325" y="540" text-anchor="middle">⚡ ROUTING</text>
+                    <text class="node-title" x="325" y="555" text-anchor="middle">DECISION</text>
+                </g>
+                
+                <!-- Decision criteria labels -->
+                <g>
+                    <text class="arrow-sublabel" x="435" y="525" fill="#475569">Criteria (in order):</text>
+                    <text class="arrow-sublabel" x="435" y="537" fill="#475569">1. depth ≥ max_depth?</text>
+                    <text class="arrow-sublabel" x="435" y="549" fill="#475569">2. Reflection says stop?</text>
+                    <text class="arrow-sublabel" x="435" y="561" fill="#475569">3. Stagnation detected?</text>
+                    <text class="arrow-sublabel" x="435" y="573" fill="#ef4444" font-weight="700">→ FINALIZE</text>
+                </g>
+                
+                <!-- Continue Loop Arrow (back to Generate Queries) -->
+                <path class="arrow-continue" d="M 225 550 L 40 550 L 40 228 L 165 228" 
+                      marker-end="url(#arrowhead-green)" fill="none"/>
+                
+                <!-- Continue label with background -->
+                <rect x="5" y="380" width="70" height="52" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+                <text class="arrow-label" x="40" y="398" fill="#065f46" text-anchor="middle" font-size="8pt" font-weight="800">↰ CONTINUE</text>
+                <text class="arrow-sublabel" x="40" y="410" fill="#059669" text-anchor="middle" font-size="6.5pt" font-weight="700">Loop Back</text>
+                <text class="arrow-sublabel" x="40" y="420" fill="#059669" text-anchor="middle" font-size="6pt">with refined</text>
+                <text class="arrow-sublabel" x="40" y="428" fill="#059669" text-anchor="middle" font-size="6pt">queries</text>
+                
+                <!-- LOOP BOX END -->
+                
+                <!-- Finalize Arrow (down) -->
+                <path class="arrow-finalize" d="M 325 600 L 325 635" 
+                      marker-end="url(#arrowhead-red)" fill="none"/>
+                <rect x="330" y="607" width="64" height="24" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+                <text class="arrow-label" x="362" y="623" fill="#dc2626" text-anchor="middle" font-size="9pt">FINALIZE</text>
+                
+                <!-- Map Connections -->
+                <g class="node">
+                    <rect class="node-openai" x="155" y="635" width="340" height="65"/>
+                    <text class="node-title" x="325" y="657" text-anchor="middle">🕸️ 5. MAP ENTITY CONNECTIONS</text>
+                    <text class="node-subtitle" x="325" y="671" text-anchor="middle">🔵 OpenAI GPT-4o | Graph Construction</text>
+                    <text class="node-detail" x="325" y="682" text-anchor="middle">Build entity graph: nodes, edges, relationships</text>
+                    <text class="node-detail" x="325" y="692" text-anchor="middle">Detect suspicious patterns and connections</text>
+                </g>
+                
+                <!-- State update -->
+                <rect class="state-box" x="505" y="653" width="105" height="40"/>
+                <text class="state-label-title" x="557" y="665" text-anchor="middle">📝 State Update</text>
+                <text class="state-label" x="557" y="676" text-anchor="middle">entity_graph{}</text>
+                <text class="state-label" x="557" y="686" text-anchor="middle">{nodes[], edges[]}</text>
+                
+                <path class="arrow" d="M 325 700 L 325 730" marker-end="url(#arrowhead)" fill="none"/>
+                
+                <!-- Synthesize Report -->
+                <g class="node">
+                    <rect class="node-output" x="135" y="730" width="380" height="65"/>
+                    <text class="node-title" x="325" y="752" text-anchor="middle">📊 6. SYNTHESIZE FINAL REPORT</text>
+                    <text class="node-subtitle" x="325" y="766" text-anchor="middle">🟦 OpenAI GPT-4o | Comprehensive Analysis</text>
+                    <text class="node-detail" x="325" y="777" text-anchor="middle">Generate due diligence report: risk assessment, red flags,</text>
+                    <text class="node-detail" x="325" y="787" text-anchor="middle">evidence evaluation, recommendations, entity relationships</text>
+                </g>
+                
+                <!-- State update -->
+                <rect class="state-box" x="525" y="748" width="100" height="40"/>
+                <text class="state-label-title" x="575" y="760" text-anchor="middle">📝 State Update</text>
+                <text class="state-label" x="575" y="771" text-anchor="middle">final_report{}</text>
+                <text class="state-label" x="575" y="781" text-anchor="middle" style="fill:#14b8a6;font-weight:800;">✓ Saved</text>
+                
+                <path class="arrow" d="M 325 795 L 325 820" marker-end="url(#arrowhead)" fill="none"/>
+                
+                <!-- End -->
+                <g class="node">
+                    <ellipse class="node-end" cx="325" cy="838" rx="90" ry="24"/>
+                    <text class="node-title" x="325" y="843" text-anchor="middle">✅ REPORT SAVED</text>
+                </g>
+                
+            </svg>
+        </div>
+        
+        <div class="footer">
+            <div>
+                <span class="footer-section">
+                    <span class="footer-label">🔄 Workflow:</span>
+                    <span class="footer-value">Iterative Query Refinement Loop</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

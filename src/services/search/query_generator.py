@@ -38,7 +38,7 @@ class QueryGenerator:
         Args:
             session_id: Session ID for logging and tracking
         """
-        self.claude = ClaudeService(session_id=session_id)
+        self.claude = ClaudeService(session_id=session_id, operation="query_generation")
         self.session_id = session_id
         self.max_queries = settings.max_queries_per_depth
     

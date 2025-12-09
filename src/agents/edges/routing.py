@@ -3,7 +3,7 @@
 from ...models.state import AgentState
 from ...config.settings import settings
 from ...utils.research_utils import check_stagnation
-from ...observability.detailed_logger import DetailedLogger
+from ...observability.logger import DetailedLogger
 
 
 def should_continue_research(state: AgentState) -> str:

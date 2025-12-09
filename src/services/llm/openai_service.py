@@ -13,7 +13,6 @@ import time
 from typing import List, Optional
 
 from agents import Agent, ModelSettings, Runner, RunConfig, WebSearchTool, AgentOutputSchema
-from openai import AsyncOpenAI
 from openai.types.responses.web_search_tool_param import UserLocation
 from openai.types.shared.reasoning import Reasoning
 
@@ -24,7 +23,7 @@ from ...models.search_result import (
     SearchQueriesList,
     ConnectionMappingOutput,
 )
-from ...observability.detailed_logger import DetailedLogger
+from ...observability.logger import DetailedLogger
 from ...prompts import (
     build_web_search_instructions,
     build_query_generation_instructions,
@@ -36,17 +35,27 @@ from ...utils.helpers import extract_tokens
 class OpenAIService:
     """Service for interacting with OpenAI models using the Agents SDK."""
     
-    def __init__(self, api_key: Optional[str] = None, session_id: Optional[str] = None):
+    def __init__(
+        self, 
+        api_key: Optional[str] = None, 
+        session_id: Optional[str] = None,
+        operation: str = "web_search"
+    ):
         """Initialize the OpenAI service.
         
         Args:
             api_key: OpenAI API key (defaults to settings)
             session_id: Session ID for logging
+            operation: Operation name for loading model config from YAML
+                      Options: 'web_search', 'synthesis', 'entity_merge', 'graph_merge', 'connection_mapping'
         """        
-        self.client = AsyncOpenAI()
-        self.search_model = settings.openai_search_model
-        self.extraction_model = settings.openai_extraction_model
         self.session_id = session_id
+        self.operation = operation
+        
+        # Load model configuration from YAML
+        self.config = settings.get_model_config(operation)
+        self.model = self.config.get("model")
+        self.verbosity = self.config.get("verbosity", "medium")
         
         # Lazy import to avoid circular dependency
         self._logger = DetailedLogger(self.session_id)
@@ -61,13 +70,22 @@ class OpenAIService:
         Returns:
             WebSearchOutput with findings and sources
         """
+        # Get web search specific config
+        web_config = settings.get_model_config("web_search")
+        
         agent = Agent(
             name="DueDiligenceResearcher",
-            model=self.search_model,
+            model=self.model,
             instructions=build_web_search_instructions(context, include_context=True),
-            tools=[WebSearchTool(search_context_size="low", user_location=UserLocation(country="US", type="approximate"))],
+            tools=[WebSearchTool(
+                search_context_size=web_config.get("context_size", "low"),
+                user_location=UserLocation(
+                    type="approximate"
+                )
+            )],
+            # output_type=AgentOutputSchema(WebSearchOutput, strict_json_schema=False),
             output_type=WebSearchOutput,
-            model_settings=ModelSettings(verbosity="medium"),
+            model_settings=ModelSettings(verbosity=self.verbosity),
         )
         
         start_time = time.time()
@@ -84,7 +102,7 @@ class OpenAIService:
         
         self._logger.log_llm_call(
             operation="web_search",
-            model=self.search_model,
+            model=self.model,
             input_data={"query": query, "context": context},
             output_data={
                 "search_result": output.search_result,
@@ -124,16 +142,16 @@ class OpenAIService:
         """
         
         print("########################################################")
-        print(f"Building query generation agent with model: {self.search_model}")
+        print(f"Building query generation agent with model: {self.model}")
         print("########################################################")
         
         agent = Agent(
             name="QueryStrategist",
-            model=self.search_model,
+            model=self.model,
             instructions=build_query_generation_instructions(settings.max_queries_per_depth),
             output_type=SearchQueriesList,
             # model_settings=ModelSettings(reasoning=Reasoning(effort="low"), verbosity="low"),
-            model_settings=ModelSettings(verbosity="medium"),
+            model_settings=ModelSettings(verbosity=self.verbosity),
         )
         
         try:
@@ -160,7 +178,7 @@ class OpenAIService:
             
             self._logger.log_llm_call(
                 operation="query_generation",
-                model=self.search_model,
+                model=self.model,
                 input_data={"subject": subject, "depth": depth, "context": context},
                 output_data={"queries": output.queries},
                 duration_ms=duration_ms,
@@ -223,12 +241,15 @@ For entity importance:
 - Consider: connection count, involvement in red flags, centrality to subject
 - Score 0-1 with clear reasoning"""
         
+        # Get connection mapping config
+        conn_config = settings.get_model_config("connection_mapping")
+        
         agent = Agent(
             name="ConnectionMapper",
-            model=self.search_model,
+            model=conn_config.get("model"),
             instructions=instructions,
             output_type=AgentOutputSchema(ConnectionMappingOutput, strict_json_schema=False),
-            model_settings=ModelSettings(verbosity="medium"),
+            model_settings=ModelSettings(verbosity=conn_config.get("verbosity", "medium")),
         )
         
         start_time = time.time()
@@ -240,7 +261,7 @@ For entity importance:
         
         self._logger.log_llm_call(
             operation="connection_mapping",
-            model=self.search_model,
+            model=conn_config.get("model"),
             input_data={"entities_count": len(discovered_entities), "existing_nodes": len(existing_graph.get("nodes", []))},
             output_data={
                 "new_nodes": len(output.new_nodes),

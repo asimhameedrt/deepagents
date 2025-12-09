@@ -12,19 +12,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from dotenv import load_dotenv
-from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 
 from .config.settings import settings
 from .models.state import AgentState
 from .agents.graph import research_graph
 from .utils.helpers import generate_session_id, format_duration
-from .observability.audit_logger import AuditLogger
-
-# Load environment variables
-load_dotenv()
-
+from .observability.logger import DetailedLogger
 
 class DeepResearchAgent:
     """
@@ -41,11 +35,9 @@ class DeepResearchAgent:
         
         Sets up:
         - LangGraph workflow
-        - Audit logging
         - LangFuse tracing (if configured)
         """
         self.graph = research_graph
-        self.audit_logger = AuditLogger()
         self.langfuse_handler = self._initialize_langfuse()
     
     def _initialize_langfuse(self) -> Optional[CallbackHandler]:
@@ -60,10 +52,9 @@ class DeepResearchAgent:
         
         try:
             # Initialize LangFuse client
-            get_client(
-                public_key=settings.langfuse_public_key,
-                secret_key=settings.langfuse_secret_key,
-            )
+            # get_client(
+            #     public_key=settings.langfuse_public_key
+            # )
             return CallbackHandler()
         except Exception as e:
             print(f"⚠️  Warning: Could not initialize LangFuse: {e}")
@@ -116,15 +107,13 @@ class DeepResearchAgent:
             "max_depth": max_depth or settings.max_search_depth,
         }
         
-        # Log session start
-        self.audit_logger.log_session_start(
-            session_id=session_id,
-            subject=subject,
-            config={
-                "max_depth": initial_state["max_depth"],
-                "max_queries_per_depth": settings.max_queries_per_depth,
-            }
-        )
+        # Initialize logger for this session
+        logger = DetailedLogger(session_id)
+        logger.log("session_start", {
+            "subject": subject,
+            "max_depth": initial_state["max_depth"],
+            "max_queries_per_depth": settings.max_queries_per_depth,
+        })
         
         # Log to console
         print(f"\n{'='*80}")
@@ -152,8 +141,7 @@ class DeepResearchAgent:
             )
             
             # Log session complete
-            self.audit_logger.log("session_complete", {
-                "session_id": session_id,
+            logger.log("session_complete", {
                 "subject": subject,
                 "duration": duration,
                 "total_queries": len(final_state.get("queries_executed", [])),
@@ -191,10 +179,10 @@ class DeepResearchAgent:
         except Exception as e:
             error_msg = f"Error during research: {e}"
             print(f"❌ {error_msg}")
-            self.audit_logger.log("error", {
-                "session_id": session_id,
+            logger.log("session_error", {
                 "subject": subject,
-                "error": str(e)
+                "error_type": type(e).__name__,
+                "error_message": str(e)
             })
             return {
                 "session_id": session_id,

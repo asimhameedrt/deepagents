@@ -2,7 +2,7 @@
 
 from ...models.state import AgentState
 from ...services.search.query_generator import QueryGenerator
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 
 @log_node_execution
 async def generate_search_queries(state: AgentState) -> AgentState:

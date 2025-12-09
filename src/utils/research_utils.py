@@ -1,11 +1,65 @@
 """Research-specific utility functions for entity merging, graph operations, and stagnation detection."""
 
+import asyncio
+import logging
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from agents import Agent, ModelSettings, Runner, RunConfig, AgentOutputSchema
 
 from ..config.settings import settings
-from ..services.llm.openai_service import OpenAIService
+
+logger = logging.getLogger(__name__)
+
+
+async def retry_agent_execution(
+    agent_func,
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+    backoff_factor: float = 2.0,
+    *args,
+    **kwargs
+):
+    """
+    Retry wrapper for agent execution with exponential backoff.
+    
+    Args:
+        agent_func: The async function to execute (should return a Runner.run result)
+        max_retries: Maximum number of retry attempts (default: 3)
+        initial_delay: Initial delay between retries in seconds (default: 1.0)
+        backoff_factor: Exponential backoff multiplier (default: 2.0)
+        *args, **kwargs: Arguments to pass to agent_func
+        
+    Returns:
+        The result from agent_func
+        
+    Raises:
+        The last exception encountered if all retries fail
+    """
+    last_exception = None
+    delay = initial_delay
+    
+    for attempt in range(max_retries):
+        try:
+            result = await agent_func(*args, **kwargs)
+            if attempt > 0:
+                logger.info(f"Agent execution succeeded on attempt {attempt + 1}")
+            return result
+            
+        except Exception as e:
+            last_exception = e
+            logger.warning(
+                f"Agent execution failed (attempt {attempt + 1}/{max_retries}): {str(e)}"
+            )
+            
+            # Don't sleep after the last attempt
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {delay:.1f} seconds...")
+                await asyncio.sleep(delay)
+                delay *= backoff_factor
+    
+    # All retries exhausted
+    logger.error(f"Agent execution failed after {max_retries} attempts")
+    raise last_exception
 
 
 class EntityMergeOutput(BaseModel):
@@ -41,7 +95,6 @@ async def merge_entities_with_llm(
     if not analysis_summary:
         return existing_entities or {}
     
-    
     instructions = """You are an entity extraction and deduplication expert.
 
 Your task:
@@ -73,15 +126,31 @@ Return:
 
 Extract all entities from the analysis summary and merge with existing entities."""
     
+    # Get entity merge config from YAML
+    entity_config = settings.get_model_config("entity_merge")
+    
+    # Get retry settings from OpenAI defaults
+    openai_defaults = settings.yaml_config.get("openai_defaults", {})
+    max_retries = openai_defaults.get("max_retries", 3)
+    
     agent = Agent(
         name="EntityMerger",
-        model=settings.openai_search_model,
+        model=entity_config.get("model"),
         instructions=instructions,
         output_type=AgentOutputSchema(EntityMergeOutput, strict_json_schema=False),
-        model_settings=ModelSettings(verbosity="medium"),
+        model_settings=ModelSettings(verbosity=entity_config.get("verbosity", "medium")),
     )
     
-    result = await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    # Execute with retry logic
+    async def run_entity_merge():
+        return await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    
+    result = await retry_agent_execution(
+        run_entity_merge,
+        max_retries=max_retries,
+        initial_delay=1.0,  # Standard delay
+        backoff_factor=2.0  # Standard exponential backoff
+    )
     output: EntityMergeOutput = result.final_output
     
     return output.merged_entities if output.merged_entities else existing_entities
@@ -130,9 +199,6 @@ async def merge_graph_with_llm(
     if "edges" not in existing_graph:
         existing_graph["edges"] = []
     
-    # Use OpenAI for intelligent graph merging (fast, structured output)
-    openai_service = OpenAIService(session_id=session_id)
-    
     instructions = """You are a graph deduplication expert. Merge new nodes and edges into existing graph.
 
 Node deduplication rules:
@@ -169,15 +235,31 @@ Edges: {len(existing_graph.get('edges', []))}
 
 Merge new nodes and edges into existing graph, handling duplicates intelligently."""
     
+    # Get graph merge config from YAML
+    graph_config = settings.get_model_config("graph_merge")
+    
+    # Get retry settings from OpenAI defaults
+    openai_defaults = settings.yaml_config.get("openai_defaults", {})
+    max_retries = openai_defaults.get("max_retries", 3)
+    
     agent = Agent(
         name="GraphMerger",
-        model=settings.openai_search_model,
+        model=graph_config.get("model"),
         instructions=instructions,
         output_type=AgentOutputSchema(GraphMergeOutput, strict_json_schema=False),
-        model_settings=ModelSettings(verbosity="medium"),
+        model_settings=ModelSettings(verbosity=graph_config.get("verbosity", "medium")),
     )
     
-    result = await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    # Execute with retry logic
+    async def run_graph_merge():
+        return await Runner.run(agent, prompt, run_config=RunConfig(tracing_disabled=True))
+    
+    result = await retry_agent_execution(
+        run_graph_merge,
+        max_retries=max_retries,
+        initial_delay=1.0,  # Standard delay
+        backoff_factor=2.0  # Standard exponential backoff
+    )
     output: GraphMergeOutput = result.final_output
     
     return output.merged_graph if output.merged_graph else existing_graph

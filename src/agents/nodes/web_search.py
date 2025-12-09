@@ -6,7 +6,7 @@ from ...models.state import AgentState, SearchIterationData
 from ...models.search_result import WebSearchOutput
 from ...services.search.web_search import SearchExecutor
 from ...config.settings import settings
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 
 
 @log_node_execution
@@ -36,10 +36,11 @@ async def execute_web_search(state: AgentState) -> AgentState:
     current_depth = state.get("current_depth", 0)
     
     # Initialize search iteration data for audit trail
+    web_search_config = settings.get_model_config("web_search")
     iteration_data: SearchIterationData = {
         "goal": f"Search iteration at depth {current_depth}",
         "queries": queries[:settings.max_queries_per_depth],
-        "model_used": settings.openai_search_model,
+        "model_used": web_search_config.get("model"),
         "new_entities": [],
         "sources_found": 0,
         "errors": []

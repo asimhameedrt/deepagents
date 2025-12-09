@@ -1,136 +1,209 @@
-# Quick Start Guide: Enhanced Deep Research Agent (Optimized ⚡)
+# Quick Start Guide
 
-## 🚀 Get Started in 3 Steps
+## Installation
 
-### 1. Configure Environment
+### Prerequisites
+- Python 3.11+
+- OpenAI API Key
+- Anthropic API Key
 
-Copy and edit `.env` file:
+### Setup
+
 ```bash
+# Clone and install
+git clone <repository-url>
+cd deepagents
+pip install -r requirements.txt
+
+# Configure API keys
 cp .env.example .env
 # Edit .env and add your API keys
 ```
 
-Required variables:
+### Required Environment Variables
+
 ```bash
 OPENAI_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 ```
 
-### 2. Run Research
+## Basic Usage
+
+### CLI
 
 ```bash
-# Basic usage
+# Basic research
 python -m src.main "Sam Bankman-Fried"
 
 # With context
 python -m src.main "Elizabeth Holmes" --context "Former CEO of Theranos"
 
 # Custom depth
-python -m src.main "Elon Musk" --max-depth 3
+python -m src.main "Elon Musk" --max-depth 7
 ```
 
-### 3. Review Results
+### Python API
 
-**Report Location:** `reports/{session_id}_report.json`
+```python
+from src.main import DeepResearchAgent
+import asyncio
 
-**Audit Log:** `logs/{session_id}.jsonl`
+async def run_research():
+    agent = DeepResearchAgent()
+    
+    result = await agent.research(
+        subject="Sam Bankman-Fried",
+        context="Founder of FTX",
+        max_depth=5
+    )
+    
+    if result["success"]:
+        print(f"Report: {result['report_path']}")
+        print(f"Risk Level: {result['report']['risk_level']}")
 
----
+asyncio.run(run_research())
+```
 
-## 📊 What You'll Get
+## Output
 
-### Comprehensive Report Includes:
-- ✅ Executive summary & overall risk level
-- ✅ Biographical overview
-- ✅ Professional history
-- ✅ Financial analysis
-- ✅ Legal & regulatory issues
-- ✅ Behavioral patterns
-- ✅ **Red flags with severity levels**
-- ✅ Entity relationship graph
-- ✅ Source credibility assessment
-- ✅ Research gaps & limitations
-- ✅ Actionable recommendations
+Each session generates:
 
----
+1. **Report**: `reports/sess_{timestamp}_report.json`
+   - Executive summary & risk level
+   - Biographical, professional, financial analysis
+   - Legal & regulatory issues
+   - Red flags with severity levels
+   - Entity relationship graph
+   - Recommendations
 
-## ⚙️ Key Configuration Options
+2. **Audit Log**: `logs/sess_{timestamp}.jsonl`
+   - Complete event trail
+   - All LLM calls with tokens/costs
+   - Compliance-ready format
 
-Edit `.env` to customize:
+3. **Console Output**: Real-time progress
+
+## Configuration
+
+### Workflow Parameters
+
+Edit `.env` or `config/models.yaml`:
 
 ```bash
-# Research depth
-MAX_SEARCH_DEPTH=5                    # How many iterations?
-MAX_QUERIES_PER_DEPTH=10              # Queries per iteration?
-
-# Stagnation detection (switch to connection mapping)
-STAGNATION_CHECK_ITERATIONS=2         # If no progress in N iterations
-
-# Termination
-# - Max depth reached
-# - Reflection recommends stop
-# - No new queries generated
+# Workflow control
+MAX_SEARCH_DEPTH=5              # Total iterations
+MAX_QUERIES_PER_DEPTH=10        # Queries per iteration
+MAX_CONCURRENT_SEARCHES=5       # Parallel search limit
+STAGNATION_CHECK_ITERATIONS=2   # Stagnation detection
 ```
 
-**Simplified:** No confidence calculation (faster Claude processing)
+### Model Configuration
 
----
+Edit `config/models.yaml` to change models without touching code:
 
-## 🔍 Understanding the Workflow
+```yaml
+query_generation:
+  provider: anthropic
+  model: claude-sonnet-4-5-20250929
+  temperature: 0.3
 
-### Iteration Cycle (Optimized ⚡):
+web_search:
+  provider: openai
+  model: GPT-4o
 
-```
-1. GENERATE QUERIES (Claude - Fast)
-   ↓ Textual strategy from reflection
-   
-2. EXECUTE SEARCHES (OpenAI)
-   ↓ Parallel web searches with sources
-   
-3. ANALYZE & REFLECT (Claude - Simple Schema)
-   ↓ Structured text analysis (fast processing)
-   
-4. MERGE ENTITIES (OpenAI - Structured)
-   ↓ Extract from text + deduplicate
-   
-5. DECISION POINT
-   ├─ Continue? → Back to step 1
-   ├─ Stagnation? → Map connections
-   └─ Done? → Synthesize report
+analysis:
+  provider: anthropic
+  model: claude-sonnet-4-5-20250929
 ```
 
-### Stopping Conditions:
-- ✋ Max depth reached
-- ✋ Reflection recommends stop
-- ✋ No new queries generated
+## How It Works
 
-**Removed:** Confidence threshold (simplified for speed)
+### Workflow
 
----
+```
+Initialize
+  ↓
+[ITERATION LOOP]
+  Generate Queries (Claude) → Strategic, targeted queries
+  ↓
+  Execute Search (OpenAI) → Parallel web searches
+  ↓
+  Analyze & Reflect (Claude) → Extract insights, assess progress
+  ↓
+  [Routing Decision]
+    • Max depth? → Finalize
+    • Reflection says stop? → Finalize
+    • Stagnant? → Finalize
+    • Otherwise → Continue (loop back)
+[END LOOP]
+  ↓
+Map Connections (OpenAI) → Build entity graph
+  ↓
+Synthesize Report (OpenAI) → Generate JSON report
+```
 
-## ⚡ Performance Optimizations
+### Termination Criteria
 
-**Simplified Schemas:**
-- Claude uses **text-based outputs** (fast processing)
-- OpenAI handles **structured data** (entity/graph operations)
-- No complex nested structures in Claude (no API failures)
+Research stops when:
+- Max depth reached
+- Reflection analysis recommends stopping
+- Stagnation detected (no new entities for N iterations)
 
-**Entity Extraction:**
-- Claude mentions entities in analysis text
-- OpenAI extracts and merges them (fast, reliable)
+## Understanding Output
 
-**Query Strategy:**
-- Natural language priorities (flexible)
-- Parsed by Claude for refinement
+### Console Output
 
----
+```
+================================================================================
+🔍 Deep Research AI Agent
+================================================================================
+Subject: Sam Bankman-Fried
+Session ID: sess_20251207_120000
+Max depth: 5
+================================================================================
 
-## 🎯 Use Cases
+[... iteration progress ...]
+
+================================================================================
+✅ Research Complete
+================================================================================
+Duration: 8m 30s
+Total Queries: 40
+Total Sources: 127
+Total Entities: 35
+Risk Level: CRITICAL
+Red Flags: 15
+Report saved: reports/sess_20251207_120000_report.json
+================================================================================
+```
+
+### Report Structure
+
+```json
+{
+  "executive_summary": "...",
+  "risk_level": "CRITICAL",
+  "key_findings": ["...", "..."],
+  "red_flags": [
+    {
+      "severity": "CRITICAL",
+      "detail": "..."
+    }
+  ],
+  "entity_graph": {
+    "nodes": [...],
+    "edges": [...]
+  },
+  "recommendations": [...]
+}
+```
+
+## Common Use Cases
 
 ### Due Diligence Investigation
 ```bash
-python -m src.main "Company CEO Name" \
-  --context "CEO of XYZ Corp, considering investment" \
+python -m src.main "CEO Name" \
+  --context "CEO of Company X, considering investment" \
   --max-depth 5
 ```
 
@@ -143,160 +216,77 @@ python -m src.main "Person Name" \
 
 ### Risk Assessment
 ```bash
-python -m src.main "Organization Name" \
+python -m src.main "Organization" \
   --context "Vendor due diligence" \
   --max-depth 4
 ```
 
----
+## Tuning Performance
 
-## 🛠️ Troubleshooting
+### Fast Mode (2-3 minutes)
+```yaml
+workflow:
+  max_search_depth: 2
+  max_queries_per_depth: 5
+```
 
-### Issue: "No module named agents"
-**Solution:** Install dependencies
+### Balanced Mode (6-8 minutes)
+```yaml
+workflow:
+  max_search_depth: 5
+  max_queries_per_depth: 10
+```
+
+### Quality Mode (12-15 minutes)
+```yaml
+workflow:
+  max_search_depth: 7
+  max_queries_per_depth: 10
+```
+
+## Troubleshooting
+
+### Dependencies Issue
 ```bash
 pip install -r requirements.txt
 ```
 
-### Issue: "API key not found"
-**Solution:** Check `.env` file has correct keys
+### API Key Not Found
 ```bash
+# Check .env file
 cat .env | grep API_KEY
 ```
 
-### Issue: Research stops too early
-**Solution:** Increase max depth or adjust stagnation iterations
+### Research Stops Too Early
 ```bash
-# In .env
+# Increase depth or reduce stagnation threshold
 MAX_SEARCH_DEPTH=7
 STAGNATION_CHECK_ITERATIONS=3
 ```
 
-### Issue: Too many queries per iteration
-**Solution:** Reduce queries per depth
+### Too Expensive
 ```bash
-# In .env
+# Reduce depth and queries
+MAX_SEARCH_DEPTH=3
 MAX_QUERIES_PER_DEPTH=5
 ```
 
----
+## Next Steps
 
-## 📖 Advanced Features
+1. **Run test research** with a well-known person
+2. **Review generated reports** in `reports/` directory
+3. **Check audit logs** in `logs/` directory
+4. **Tune configuration** in `config/models.yaml`
+5. **Read architecture** in [SOLUTION_DESIGN.md](SOLUTION_DESIGN.md)
 
-### 1. Stagnation Control
-Control when to switch from search to analysis:
+## Tips
 
-```bash
-# More aggressive (stop searching sooner)
-STAGNATION_CHECK_ITERATIONS=1
-
-# More patient (keep searching longer)
-STAGNATION_CHECK_ITERATIONS=3
-```
-
-### 2. Enable Model Cross-Validation
-Use both Claude and OpenAI for critical decisions:
-
-```bash
-ENABLE_MODEL_CROSS_VALIDATION=true
-```
+- Start with `max_depth=2` for testing
+- Use `--context` parameter for better initial queries
+- Monitor costs via audit logs
+- Review reflection reasoning in logs to understand decisions
+- Adjust stagnation threshold based on research goals
 
 ---
 
-## 📊 Sample Output
-
-### Console Output
-```
-================================================================================
-🔍 Deep Research AI Agent
-================================================================================
-Subject: Sam Bankman-Fried
-Session ID: sess_20251203_120000
-Max depth: 5
-================================================================================
-
-[Iteration 0] Generating initial queries...
-[Iteration 0] Executing 7 searches...
-[Iteration 0] Analyzing and reflecting...
-  → Found 15 entities, 8 red flags
-  → Confidence: 0.45
-
-[Iteration 1] Generating refined queries (priority: red flags)...
-[Iteration 1] Executing 10 searches...
-[Iteration 1] Analyzing and reflecting...
-  → Found 12 new entities, 5 new red flags
-  → Confidence: 0.68
-
-[Iteration 2] Generating refined queries...
-[Iteration 2] Executing 8 searches...
-[Iteration 2] Analyzing and reflecting...
-  → Found 3 new entities, 2 new red flags
-  → Confidence: 0.87
-
-================================================================================
-✅ Research Complete
-================================================================================
-Duration: 5m 23s
-Total Queries: 25
-Total Sources: 142
-Total Entities: 28
-Risk Level: CRITICAL
-Red Flags: 15
-Report saved: reports/sess_20251203_120000_report.json
-================================================================================
-```
-
-### Report Structure (JSON)
-```json
-{
-  "metadata": {
-    "subject": "Sam Bankman-Fried",
-    "research_depth": 3,
-    "risk_level": "CRITICAL"
-  },
-  "executive_summary": "...",
-  "key_findings": [...],
-  "biographical_overview": "...",
-  "professional_history": "...",
-  "financial_analysis": "...",
-  "legal_regulatory": "...",
-  "red_flags": [
-    {
-      "finding": "$8B customer funds missing",
-      "severity": "critical",
-      "confidence": 0.95,
-      "sources": ["Bloomberg", "WSJ", "SEC"]
-    }
-  ],
-  "entity_graph": {
-    "nodes": [...],
-    "edges": [...]
-  },
-  "recommendations": [...]
-}
-```
-
----
-
-## 🎓 Next Steps
-
-1. **Read full implementation:** See `IMPLEMENTATION_SUMMARY.md`
-2. **Review architecture:** See `SOLUTION_DESIGN.md`
-3. **Customize config:** Edit `.env` for your use case
-4. **Run test research:** Start with a well-known person
-5. **Review output:** Check generated reports and logs
-
----
-
-## 💡 Tips
-
-- **Start with low depth** (2-3) for testing
-- **Review reflection reasoning** in audit logs
-- **Adjust confidence weights** based on your priorities
-- **Monitor API costs** (LLM calls add up)
-- **Use context parameter** for better initial queries
-
----
-
-**Need Help?** Check `IMPLEMENTATION_SUMMARY.md` for detailed documentation.
-
+**For detailed architecture**: See [SOLUTION_DESIGN.md](SOLUTION_DESIGN.md)

@@ -9,29 +9,44 @@ for analysis tasks that benefit from Claude's reasoning capabilities:
 """
 
 import time
-from typing import Optional, Type
+from typing import Optional, Type, Dict, Any
 
 from anthropic import AsyncAnthropic
 from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel
 
 from ...config.settings import settings
-from ...observability.detailed_logger import DetailedLogger
+from ...observability.logger import DetailedLogger
 
 
 class ClaudeService:
     """Service for interacting with Claude for analysis tasks."""
     
-    def __init__(self, api_key: Optional[str] = None, session_id: Optional[str] = None):
+    def __init__(
+        self, 
+        api_key: Optional[str] = None, 
+        session_id: Optional[str] = None,
+        operation: str = "analysis"
+    ):
         """Initialize the Claude service.
         
         Args:
             api_key: Anthropic API key (defaults to settings)
             session_id: Session ID for logging
+            operation: Operation name for loading model config from YAML
+                      Options: 'query_generation', 'analysis'
         """
         self.client = AsyncAnthropic(api_key=api_key or settings.anthropic_api_key)
-        self.model = settings.claude_model
         self.session_id = session_id
+        self.operation = operation
+        
+        # Load model configuration from YAML
+        self.config = settings.get_model_config(operation)
+        self.model = self.config.get("model")
+        self.temperature = self.config.get("temperature", 0.1)
+        self.max_tokens = self.config.get("max_tokens", 16384)
+        self.max_retries = self.config.get("max_retries", 2)
+        self.timeout = self.config.get("timeout", 300)  # Default 5 minutes (in seconds)
         
         # Initialize logger if session_id is provided
         self._logger = DetailedLogger(session_id) if session_id else None
@@ -58,10 +73,10 @@ class ClaudeService:
         start_time = time.time()
         model = ChatAnthropic(
             model=self.model,
-            temperature=0.1,
-            max_tokens=16384,
-            max_retries=2,
-            timeout=10000,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            max_retries=self.max_retries,
+            timeout=self.timeout,
         )
         
         messages = [
@@ -77,14 +92,15 @@ class ClaudeService:
             if self._logger:
                 self._logger.log_error("extract_structured", e, {
                     "schema": schema.__name__,
-                    "text_length": len(text)
+                    "text_length": len(text),
+                    "operation": self.operation
                 })
             raise e
 
         # Log LLM call if logger is available
         if self._logger:
             self._logger.log_llm_call(
-                operation="extract_structured",
+                operation=f"extract_structured_{self.operation}",
                 model=self.model,
                 input_data={"text": text, "schema": schema, "instruction": instruction, "system_prompt": system_prompt},
                 output_data=result.model_dump(),

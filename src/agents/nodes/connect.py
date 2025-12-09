@@ -2,7 +2,7 @@
 
 from ...models.state import AgentState
 from ...services.llm.openai_service import OpenAIService
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 from ...utils.research_utils import merge_graph_with_llm
 
 

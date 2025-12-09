@@ -3,7 +3,7 @@
 from ...models.state import AgentState
 from ...models.search_result import ReflectionOutput
 from ...services.llm.claude_service import ClaudeService
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 from ...utils.research_utils import merge_entities_with_llm
 from ...prompts.analysis import build_reflection_prompt, ANALYSIS_SYSTEM_PROMPT
 
@@ -41,8 +41,8 @@ async def analyze_and_reflect(state: AgentState) -> AgentState:
         logger.log_warning("No search memory to analyze, skipping reflection")
         return state
     
-    # Initialize Claude service
-    claude = ClaudeService(session_id=state["session_id"])
+    # Initialize Claude service for analysis
+    claude = ClaudeService(session_id=state["session_id"], operation="analysis")
     
     # Build reflection prompt
     prompt = build_reflection_prompt(state)

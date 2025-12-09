@@ -8,7 +8,7 @@ from agents import Agent, ModelSettings, Runner, RunConfig
 from ...models.state import AgentState
 from ...models.search_result import DueDiligenceReport
 from ...config.settings import settings
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 from ...prompts.synthesis import build_synthesis_prompt, SYNTHESIS_INSTRUCTIONS
 
 
@@ -38,13 +38,16 @@ async def synthesize_report(state: AgentState) -> AgentState:
         # Build synthesis prompt
         prompt = build_synthesis_prompt(state)
         
+        # Get synthesis config from YAML
+        synthesis_config = settings.get_model_config("synthesis")
+        
         # Use OpenAI Agents SDK for report generation
         agent = Agent(
             name="ReportSynthesizer",
-            model=settings.openai_search_model,
+            model=synthesis_config.get("model"),
             instructions=SYNTHESIS_INSTRUCTIONS,
             output_type=DueDiligenceReport,
-            model_settings=ModelSettings(verbosity="medium"),
+            model_settings=ModelSettings(verbosity=synthesis_config.get("verbosity", "medium")),
         )
         
         logger.log_info("Executing OpenAI report synthesis")
@@ -70,9 +73,9 @@ async def synthesize_report(state: AgentState) -> AgentState:
             "termination_reason": state.get("termination_reason"),
             "generated_at": datetime.utcnow().isoformat(),
             "models_used": {
-                "search": settings.openai_search_model,
-                "analysis": settings.claude_model,
-                "synthesis": settings.openai_search_model
+                "search": settings.get_model_config("web_search").get("model"),
+                "analysis": settings.get_model_config("analysis").get("model"),
+                "synthesis": settings.get_model_config("synthesis").get("model")
             }
         }
         
