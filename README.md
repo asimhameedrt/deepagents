@@ -166,27 +166,6 @@ python -m src.main "Elizabeth Holmes" --context "Former CEO of Theranos" --max-d
 # Set custom search depth
 python -m src.main "Bill Hwang" --max-depth 7
 ```
-
-### Python API
-
-```python
-from src.main import DeepResearchAgent
-import asyncio
-
-async def run_research():
-    agent = DeepResearchAgent()
-    
-    result = await agent.research(
-        subject="Andrew NG",
-        context="computer scientist",
-        max_depth=5
-    )
-    
-    print(f"Report saved to: {result['report_path']}")
-
-asyncio.run(run_research())
-```
-
 ---
 
 ## Configuration
@@ -257,9 +236,9 @@ Typical session (depth=5, 10 queries/iteration):
 - **Sources**: 100-150 processed
 
 **Performance Modes**:
-- **Fast** (depth=2): 2-3 minutes, ~$1.50
-- **Balanced** (depth=5): 6-8 minutes, ~$3.80
-- **Quality** (depth=7): 12-15 minutes, ~$8
+- **Fast** (depth=2): 2-3 minutes
+- **Balanced** (depth=5): 6-8 minutes
+- **Quality** (depth=7): 12-15 minutes
 
 ---
 
@@ -292,8 +271,6 @@ python convert_to_pdf.py --session sess_20251208_212522
 - Executive summary, findings, entity networks
 - Comprehensive analysis sections
 - PDFs saved alongside JSON files in `reports/`
-
-See [**docs/PDF_CONVERSION.md**](docs/PDF_CONVERSION.md) for detailed documentation.
 
 ---
 
@@ -331,6 +308,7 @@ The following subjects have been researched and documented:
 
 | Subject | Session ID | Report Generated |
 |---------|------------|------------------|
+| **Andrew Ng** | sess_20251209_095140 | ✅ JSON + PDF |
 | **Bill Hwang** | sess_20251208_212522 | ✅ JSON + PDF |
 | **Isabel dos Santos** | sess_20251208_211141 | ✅ JSON + PDF |
 | **Adrian Cole** | sess_20251208_205804 | ✅ JSON + PDF |
