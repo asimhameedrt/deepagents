@@ -296,7 +296,7 @@ deepagents/
 │   └── utils/                  # Helper functions
 ├── docs/                       # Documentation
 ├── tests/                      # Test suite with evaluation personas
-├── logs/                       # Audit logs (JSONL)
+├── logs/                       # Execution / Audit logs (JSONL)
 └── reports/                    # Generated reports (JSON)
 ```
 
@@ -306,14 +306,14 @@ deepagents/
 
 The following subjects have been researched and documented:
 
-| Subject | Session ID | Report Generated |
-|---------|------------|------------------|
-| **Andrew Ng** | sess_20251209_095140 | ✅ JSON + PDF |
-| **Bill Hwang** | sess_20251208_212522 | ✅ JSON + PDF |
-| **Isabel dos Santos** | sess_20251208_211141 | ✅ JSON + PDF |
-| **Adrian Cole** | sess_20251208_205804 | ✅ JSON + PDF |
-| **Dr. Lena Voronina** | sess_20251208_202514 | ✅ JSON + PDF |
-| **Elon Musk** | sess_20251208_201533 | ✅ JSON + PDF |
+| Subject | Session ID | Report Generated | Execution Logs |
+|---------|------------|------------------|----------------|
+| **Andrew Ng** | sess_20251209_095140 | ✅ JSON + PDF | ✅ JSONL |
+| **Bill Hwang** | sess_20251208_212522 | ✅ JSON + PDF | ✅ JSONL |
+| **Isabel dos Santos** | sess_20251208_211141 | ✅ JSON + PDF | ✅ JSONL |
+| **Adrian Cole** | sess_20251208_205804 | ✅ JSON + PDF | ✅ JSONL |
+| **Dr. Lena Voronina** | sess_20251208_202514 | ✅ JSON + PDF | ✅ JSONL |
+| **Elon Musk** | sess_20251208_201533 | ✅ JSON + PDF | ✅ JSONL |
 
 All research reports include comprehensive due diligence analysis with entity graphs, risk assessments, and evidence-based findings.
 
