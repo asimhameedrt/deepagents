@@ -36,3 +36,7 @@ pytest-mock
 # Utilities
 python-dotenv
 
+# PDF Generation
+reportlab
+pypdf
+

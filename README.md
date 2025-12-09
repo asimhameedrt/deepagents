@@ -273,6 +273,31 @@ Typical session (depth=5, 10 queries/iteration):
 
 ---
 
+## 📄 PDF Report Generation
+
+Convert JSON reports to professionally formatted PDFs:
+
+```bash
+# Convert all reports to PDF (default)
+python convert_to_pdf.py
+
+# Convert latest report only
+python convert_to_pdf.py --latest
+
+# Convert specific session
+python convert_to_pdf.py --session sess_20251208_212522
+```
+
+**Features:**
+- Professional formatting with color-coded risk levels
+- Executive summary, findings, entity networks
+- Comprehensive analysis sections
+- PDFs saved alongside JSON files in `reports/`
+
+See [**docs/PDF_CONVERSION.md**](docs/PDF_CONVERSION.md) for detailed documentation.
+
+---
+
 ## Project Structure
 
 ```
@@ -301,6 +326,18 @@ deepagents/
 
 ---
 
-**Test Personas**: Sam Bankman-Fried, Elon Musk, Isabel dos Santos
+## 🧪 Research Sessions & Test Subjects
+
+The following subjects have been researched and documented:
+
+| Subject | Session ID | Report Generated |
+|---------|------------|------------------|
+| **Bill Hwang** | sess_20251208_212522 | ✅ JSON + PDF |
+| **Isabel dos Santos** | sess_20251208_211141 | ✅ JSON + PDF |
+| **Adrian Cole** | sess_20251208_205804 | ✅ JSON + PDF |
+| **Dr. Lena Voronina** | sess_20251208_202514 | ✅ JSON + PDF |
+| **Elon Musk** | sess_20251208_201533 | ✅ JSON + PDF |
+
+All research reports include comprehensive due diligence analysis with entity graphs, risk assessments, and evidence-based findings.
 
 ---
