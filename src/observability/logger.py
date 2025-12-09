@@ -1,8 +1,13 @@
-"""Detailed logger for comprehensive debugging and monitoring."""
+"""
+This module provides a structured JSON logging system for tracking
+all agent operations, LLM calls, errors, state transitions, and compliance events.
+"""
 
 import json
 import functools
+import inspect
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from ..config.settings import settings
@@ -21,22 +26,27 @@ class DetailedLogger:
     """
     
     def __init__(self, session_id: str):
-        """Initialize the detailed logger.
+        """
+        Initialize the detailed logger.
         
         Args:
-            session_id: Current session ID
+            session_id: Current session ID (used for log file naming)
         """
         self.session_id = session_id
-        self.log_dir = settings.log_dir
+        self.log_dir = Path(settings.log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = self.log_dir / f"{session_id}.jsonl"
         
     def log(self, event: str, data: Dict[str, Any]) -> None:
-        """Write a log entry.
+        """
+        Write a structured log entry.
+        
+        All log entries include timestamp, session_id, and event type.
+        Additional data is merged into the entry.
         
         Args:
             event: Event type/name
-            data: Event data
+            data: Event data dictionary
         """
         log_entry = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -45,65 +55,78 @@ class DetailedLogger:
             **data
         }
         
-        with open(self.log_file, 'a') as f:
-            f.write(json.dumps(log_entry, default=str) + '\n')
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(log_entry, default=str) + '\n')
+        except Exception as e:
+            # Fallback to console if file writing fails
+            print(f"⚠️  Logging error: {e}")
     
     def log_node_entry(self, node_name: str, state: Dict[str, Any]) -> None:
-        """Log entry into a graph node.
+        """
+        Log entry into a graph node.
+        
+        Creates a safe snapshot of state (removing large objects)
+        and logs both to file and console.
         
         Args:
             node_name: Name of the node
             state: Current state snapshot
         """
         # Create safe state snapshot (remove large objects)
-        safe_state = {
-            "subject": state.get("subject"),
-            "current_depth": state.get("current_depth"),
-            "max_depth": state.get("max_depth"),
-            "search_count": state.get("search_count"),
-            "extraction_count": state.get("extraction_count"),
-            "error_count": state.get("error_count"),
-            "entities_count": len(state.get("entities", [])),
-            "facts_count": len(state.get("facts", [])),
-            "pending_queries_count": len(state.get("pending_queries", [])),
-            "queries_executed_count": len(state.get("queries_executed", [])),
-            "should_continue": state.get("should_continue"),
-        }
+        safe_state = self._create_safe_state_snapshot(state)
         
         self.log("node_entry", {
             "node": node_name,
             "state_snapshot": safe_state
         })
         
-        print(f"{'='*80}")
-        print(f"NODE: {node_name}")
-        print(f"  Depth: {state.get('current_depth')}/{state.get('max_depth')}")
-        print(f"  Entities: {len(state.get('entities', []))}, Facts: {len(state.get('facts', []))}")
-        print(f"  Pending Queries: {len(state.get('pending_queries', []))}")
-        print(f"{'='*80}")
+        self._print_node_entry(node_name, state)
     
-    def log_node_exit(self, node_name: str, state: Dict[str, Any], duration_ms: float) -> None:
-        """Log exit from a graph node.
+    def _create_safe_state_snapshot(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a safe state snapshot for logging (excludes large objects).
         
         Args:
-            node_name: Name of the node
-            state: Updated state
-            duration_ms: Node execution time in milliseconds
+            state: Full state dictionary
+            
+        Returns:
+            Sanitized state dictionary with counts instead of lists
         """
-        safe_state = {
+        return {
             "subject": state.get("subject"),
             "current_depth": state.get("current_depth"),
             "max_depth": state.get("max_depth"),
             "search_count": state.get("search_count"),
             "extraction_count": state.get("extraction_count"),
             "error_count": state.get("error_count"),
-            "entities_count": len(state.get("entities", [])),
-            "facts_count": len(state.get("facts", [])),
+            "entities_count": len(state.get("discovered_entities", {})),
             "pending_queries_count": len(state.get("pending_queries", [])),
             "queries_executed_count": len(state.get("queries_executed", [])),
             "should_continue": state.get("should_continue"),
-            "termination_reason": state.get("termination_reason")
         }
+    
+    def _print_node_entry(self, node_name: str, state: Dict[str, Any]) -> None:
+        """Print node entry to console."""
+        print(f"{'='*80}")
+        print(f"NODE: {node_name}")
+        print(f"  Depth: {state.get('current_depth')}/{state.get('max_depth')}")
+        print(f"  Entities: {len(state.get('discovered_entities', {}))}")
+        print(f"  Pending Queries: {len(state.get('pending_queries', []))}")
+        print(f"{'='*80}")
+    
+    def log_node_exit(self, node_name: str, state: Dict[str, Any], duration_ms: float) -> None:
+        """
+        Log exit from a graph node.
+        
+        Args:
+            node_name: Name of the node
+            state: Updated state after node execution
+            duration_ms: Node execution time in milliseconds
+        """
+        # Create safe state snapshot
+        safe_state = self._create_safe_state_snapshot(state)
+        safe_state["termination_reason"] = state.get("termination_reason")
         
         self.log("node_exit", {
             "node": node_name,
@@ -243,6 +266,54 @@ class DetailedLogger:
             print(f"    Score: {risk_assessment.overall_score}")
             print(f"    Red Flags: {len(risk_assessment.red_flags)}")
     
+    def log_info(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log an informational message.
+        
+        Args:
+            message: Info message
+            data: Optional additional data
+        """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
+        log_data = {
+            "message": message,
+            "file": filename,
+            "line": line_number
+        }
+        if data:
+            log_data.update(data)
+        
+        self.log("info", log_data)
+        print(f"  INFO [{filename.split('/')[-1]}:{line_number}]: {message}")
+    
+    def log_warning(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log a warning message.
+        
+        Args:
+            message: Warning message
+            data: Optional additional data
+        """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
+        log_data = {
+            "message": message,
+            "file": filename,
+            "line": line_number
+        }
+        if data:
+            log_data.update(data)
+        
+        self.log("warning", log_data)
+        print(f"  ⚠️  WARNING [{filename.split('/')[-1]}:{line_number}]: {message}")
+    
     def log_error(self, operation: str, error: Exception, context: Dict[str, Any]) -> None:
         """Log an error.
         
@@ -251,14 +322,22 @@ class DetailedLogger:
             error: The exception
             context: Additional context
         """
+        # Get caller information
+        frame = inspect.currentframe()
+        caller_frame = frame.f_back
+        filename = caller_frame.f_code.co_filename
+        line_number = caller_frame.f_lineno
+        
         self.log("error", {
             "operation": operation,
             "error_type": type(error).__name__,
             "error_message": str(error),
-            "context": context
+            "context": context,
+            "file": filename,
+            "line": line_number
         })
         
-        print(f"  ERROR in {operation}: {type(error).__name__}: {error}")
+        print(f"  ❌ ERROR [{filename.split('/')[-1]}:{line_number}] in {operation}: {type(error).__name__}: {error}")
     
     def log_report_generated(self, report: Any) -> None:
         """Log report generation.

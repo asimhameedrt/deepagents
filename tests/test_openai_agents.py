@@ -51,7 +51,6 @@ Provide accurate dates and source URLs for each update found.""",
             WebSearchTool(
                 search_context_size="low",
                 user_location=UserLocation(
-                    country="US",
                     type="approximate",
                 ),
             )

@@ -1,40 +1,158 @@
-# Deep Research AI Agent
+# DeepAgents: Autonomous Due Diligence Research System
 
-An autonomous AI agent capable of conducting comprehensive Enhanced Due Diligence (EDD) investigations on individuals and entities. The system leverages multi-model AI architecture to gather intelligence, map relationships, identify risks, and generate compliance-ready reports.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Workflow-green.svg)](https://langchain-ai.github.io/langgraph/)
+[![Multi-Model](https://img.shields.io/badge/AI-Multi--Model-purple.svg)](docs/LLM_SERVICES.md)
 
-## Features
 
-- **Multi-Model AI Architecture**: Uses OpenAI GPT-4.1 for search and Claude Sonnet 4 for analysis
-- **Consecutive Search Strategy**: Each search builds upon previous findings
-- **Dynamic Query Refinement**: Adapts search strategies based on discovered information
-- **Risk Pattern Recognition**: Identifies red flags across 10 risk categories
-- **Connection Mapping**: Traces relationships between entities and organizations
-- **Source Validation**: Implements tier-based source classification and confidence scoring
-- **Compliance-Ready Reports**: Generates comprehensive EDD reports with full audit trails
+A production-ready autonomous AI system for Enhanced Due Diligence (EDD) investigations using graph-based workflow orchestration with LangGraph and multi-model AI architecture (Claude Sonnet 4.5 + GPT-4o).
+
+## Overview
+
+## System Overview
+
+DeepAgents is an **autonomous research agent** that conducts comprehensive Enhanced Due Diligence (EDD) investigations on individuals and entities. It orchestrates multiple AI models through a graph-based workflow to automatically gather intelligence, analyze risks, map relationships, and generate compliance-ready reports.
+
+### How It Works
+
+The system implements **graph-based workflow orchestration** using LangGraph to coordinate multiple specialized AI models in a stateful research pipeline:
+
+1. **Iterative Research Cycle**
+   - Generates strategic search queries based on reflection analysis
+   - Executes parallel web searches to gather information
+   - Analyzes findings and extracts insights
+   - Decides whether to continue searching or finalize report
+   - Loops until max depth reached, reflection recommends stopping, or stagnation detected
+
+2. **Multi-Model Architecture**
+   - **Claude Sonnet 4.5**: Strategic analysis, query generation, reflection (fast with simple schemas)
+   - **GPT-4o/mini**: Web search, entity extraction, connection mapping, report synthesis (reliable structured output)
+
+3. **Entity & Risk Intelligence**
+   - Automatically discovers and deduplicates entities (persons, organizations, events)
+   - Builds relationship graphs with pattern detection
+   - Identifies risk indicators across multiple categories
+   - Flags suspicious connections and conflicts of interest
+
+4. **Comprehensive Reporting**
+   - Generates structured due diligence reports
+   - Risk assessment with severity levels (CRITICAL, HIGH, MEDIUM, LOW)
+   - Complete source attribution and audit trail
+   - Actionable recommendations
+
+### Key Capabilities
+
+**Autonomous Operation**
+- No human intervention required during research
+- Self-improving search through reflection-driven strategy
+- Intelligent termination based on progress assessment
+
+**Entity Tracking**
+- LLM-based entity discovery and deduplication
+- Handles aliases, variations, and name changes
+- Builds comprehensive entity relationship graphs
+- Pattern detection and suspicious connection flagging
+
+**Risk Assessment**
+- Multi-category risk detection (fraud, corruption, sanctions, PEP, regulatory, etc.)
+- Severity-labeled red flags with evidence
+- Source credibility evaluation
+- Gap analysis and research limitations
+
+**Production-Ready**
+- Complete audit trail (JSONL format) for compliance
+- Type-safe state management with immutable updates
+- Configurable models and parameters (YAML-based)
+- Dual logging (audit + operational) with optional LangFuse integration
+- Error handling and recovery at all levels
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   User Interface                         │
+│              CLI / Python API / REST API                 │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│              DeepResearchAgent (Orchestrator)            │
+│  • Session management    • Workflow execution            │
+│  • Error handling        • Result aggregation            │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│            LangGraph Workflow Engine                     │
+│                                                           │
+│  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐            │
+│  │ Init │──▶│Query │──▶│Search│──▶│Analyze│            │
+│  └──────┘   └──────┘   └──────┘   └──┬───┘            │
+│                                        │                 │
+│                  ┌─────────────────────┘                 │
+│                  │  [Routing Decision]                   │
+│          ┌───────▼────────┬──────────────┐             │
+│          │                │              │              │
+│     ┌────▼───┐      ┌────▼────┐    ┌───▼────┐        │
+│     │Continue│      │Connect  │    │Finalize │        │
+│     │(Loop)  │      │(Graph)  │    │Report   │        │
+│     └────────┘      └────┬────┘    └─────────┘        │
+│                          │                             │
+│                     ┌────▼────┐                        │
+│                     │Synthesize│                       │
+│                     └─────────┘                        │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│                 Service Layer                            │
+│  ┌──────────────┬──────────────┬──────────────┐        │
+│  │OpenAI Service│Claude Service│Search Service│        │
+│  │• Web Search  │• Reflection  │• Parallel    │        │
+│  │• Entity Ops  │• Query Gen   │  Execution   │        │
+│  │• Graph Build │• Analysis    │• Rate Limit  │        │
+│  │• Synthesis   │              │              │        │
+│  └──────────────┴──────────────┴──────────────┘        │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│            Data & Observability Layer                    │
+│  ┌──────────────┬──────────────┬────────────────┐      │
+│  │State Models  │Audit Logger  │Operational Log │      │
+│  │(Pydantic)    │(JSONL)       │(Structured)    │      │
+│  └──────────────┴──────────────┴────────────────┘      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Workflow Execution
+
+![DeepAgents Workflow](docs/workflow.png)
+
+
+### Use Cases
+
+- **Investment Due Diligence**: Comprehensive background checks on executives, board members, major shareholders
+- **Vendor Risk Assessment**: Third-party due diligence, supply chain risk analysis
+- **Compliance & AML**: PEP screening, sanctions checking, adverse media monitoring
+- **M&A Due Diligence**: Target company investigation, key person analysis
+- **Background Verification**: Executive hiring, partnership evaluation
+- **Investigative Research**: Fraud investigation support, litigation intelligence
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
-- OpenAI API key
-- Anthropic API key
+- OpenAI API Key
+- Anthropic API Key
 
 ### Installation
 
-1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd 00-deepresearch-agents/workspace
-```
-
-2. Install dependencies:
-```bash
+cd deepagents
 pip install -r requirements.txt
-```
 
-3. Configure environment:
-```bash
+# Configure API keys
 cp .env.example .env
 # Edit .env and add your API keys
 ```
@@ -42,17 +160,14 @@ cp .env.example .env
 ### Basic Usage
 
 ```bash
-# Run research on a subject
-python -m src.main "Elon Musk"
-
-# With additional context
-python -m src.main "Elizabeth Holmes" --context "Former CEO of Theranos" --max-depth 1
+# CLI execution
+python -m src.main "Elizabeth Holmes" --context "Former CEO of Theranos" --max-depth 3
 
 # Set custom search depth
 python -m src.main "Bill Hwang" --max-depth 7
 ```
 
-### Python API Usage
+### Python API
 
 ```python
 from src.main import DeepResearchAgent
@@ -62,8 +177,8 @@ async def run_research():
     agent = DeepResearchAgent()
     
     result = await agent.research(
-        subject="Isabel dos Santos",
-        context="Angolan businesswoman",
+        subject="Sam Bankman-Fried",
+        context="Founder of FTX",
         max_depth=5
     )
     
@@ -72,211 +187,157 @@ async def run_research():
 asyncio.run(run_research())
 ```
 
-## Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           USER INTERFACE                             │
-│                    CLI / API Endpoint / Python SDK                   │
-├─────────────────────────────────────────────────────────────────────┤
-│                        ORCHESTRATION LAYER                           │
-│                            LangGraph                                 │
-│       START → Search → Extract → Analyze → Synthesize → END         │
-│         ↑                                       │                    │
-│         └────────── Refine Loop ←──────────────┘                    │
-├────────────────────┬────────────────────┬──────────────────────────┤
-│  OPENAI SERVICES   │  CLAUDE SERVICES   │    DATA SERVICES         │
-│  • Web Search      │  • Risk Analysis   │  • Pydantic Models       │
-│  • Query Gen       │  • Pattern Recog   │  • Source Tier DB        │
-│  • Entity Extract  │  • Red Flag Detect │  • Connection Graph      │
-│  • Structured Out  │  • EDD Synthesis   │  • Search Cache          │
-└────────────────────┴────────────────────┴──────────────────────────┘
-```
-
-### Key Components
-
-- **LangGraph Workflow**: Orchestrates the consecutive search and analysis process
-- **OpenAI Service**: Handles web search, entity extraction, and structured output
-- **Claude Service**: Performs risk analysis and report synthesis
-- **Connection Mapper**: Builds relationship graphs using NetworkX
-- **Source Validator**: Classifies sources into 5 tiers and calculates confidence scores
-- **EDD Report Generator**: Synthesizes comprehensive compliance-ready reports
-
-## Workflow
-
-The agent follows a systematic research process:
-
-1. **Initialize**: Set up research session with parameters
-2. **Generate Queries**: Create initial search queries
-3. **Execute Search**: Perform web searches in parallel
-4. **Extract Entities**: Identify persons, organizations, and facts
-5. **Classify Sources**: Tier sources and calculate confidence
-6. **Decision Point**: Continue searching, analyze, or finish
-7. **Risk Analysis**: Identify red flags and assess risks
-8. **Connection Mapping**: Map relationships between entities
-9. **Refine Queries**: Generate deeper queries based on findings
-10. **Synthesize Report**: Generate comprehensive EDD report
-
-## Evaluation
-
-The system includes a comprehensive evaluation framework with test personas:
-
-- **Elon Musk**: High-profile tech entrepreneur (connection mapping)
-- **Elizabeth Holmes**: Convicted fraudster (red flag detection)
-- **Isabel dos Santos**: African billionaire (PEP, international complexity)
-
-### Running Evaluations
-
-```bash
-# Run evaluation tests
-pytest tests/evaluation/test_persona_recall.py -v
-
-# Evaluate specific persona
-python tests/evaluation/run_evaluation.py --persona elon_musk
-```
-
-### Success Criteria
-
-| Metric | Target |
-|--------|--------|
-| Surface-level fact recall | > 95% |
-| Medium-depth fact recall | > 70% |
-| Deep/hidden fact recall | > 40% |
-| Fact precision (verified) | > 90% |
-| Red flag detection rate | > 80% |
-| Average source tier quality | < 2.5 |
-| Report generation time | < 10 minutes |
+---
 
 ## Configuration
 
-Edit `.env` to configure:
+### Model Configuration
 
-```env
-# API Keys
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
+Edit `config/models.yaml` to change models without code changes:
 
-# Agent Configuration
-MAX_SEARCH_DEPTH=5
-MAX_QUERIES_PER_DEPTH=10
-MIN_CONFIDENCE_THRESHOLD=0.6
-MAX_CONCURRENT_SEARCHES=5
+```yaml
+workflow:
+  max_search_depth: 5
+  max_queries_per_depth: 10
+  max_concurrent_searches: 5
 
-# Models
-OPENAI_SEARCH_MODEL=gpt-4o
-CLAUDE_MODEL=claude-sonnet-4-20250514
+query_generation:
+  provider: anthropic
+  model: claude-sonnet-4-5-20250929
+  temperature: 0.3
+
+web_search:
+  provider: openai
+  model: GPT-4o
 ```
+
+### Environment Variables
+
+```bash
+# Required
+OPENAI_API_KEY=your_key
+ANTHROPIC_API_KEY=your_key
+
+# Optional (for observability)
+LANGFUSE_PUBLIC_KEY=your_key
+LANGFUSE_SECRET_KEY=your_key
+```
+
+---
 
 ## Output
 
-The agent generates:
+Each research session generates:
 
-1. **JSON Report**: Complete EDD report with all findings (`reports/sess_*_report.json`)
-2. **Audit Logs**: Full audit trail for compliance (`logs/sess_*.jsonl`)
-3. **Console Output**: Real-time progress and summary
+1. **JSON Report** (`reports/sess_*_report.json`)
+   - Executive summary & risk level
+   - 18 comprehensive sections
+   - Risk assessment with severity levels
+   - Entity relationship graph
+   - Source attribution and recommendations
 
-### Report Sections
+2. **Audit Log** (`logs/sess_*.jsonl`)
+   - Complete immutable event trail
+   - All LLM calls with tokens/costs
+   - Compliance-ready format
 
-- Executive Summary
-- Identification & Background
-- Professional Profile
-- Corporate Affiliations
-- Political Exposure
-- Financial Profile
-- Regulatory & Legal History
-- Adverse Media
-- Relationship Mapping
-- Geographic Risk Assessment
-- Risk Assessment (with red flags)
+3. **Console Output**
+   - Real-time progress updates
+   - Summary metrics and statistics
 
-## Risk Categories
+---
 
-The system evaluates 10 risk categories:
+## Performance
 
-1. **Financial Crime**: Money laundering, fraud, embezzlement
-2. **Fraud**: Fraudulent activities and schemes
-3. **Corruption**: Bribery, kickbacks, corrupt practices
-4. **Sanctions**: OFAC, UN, EU sanctions exposure
-5. **PEP Exposure**: Politically Exposed Persons
-6. **Regulatory**: Enforcement actions, violations
-7. **Reputational**: Adverse media, controversies
-8. **Litigation**: Lawsuits, legal proceedings
-9. **Geographic**: High-risk jurisdictions
-10. **Industry**: High-risk sectors
+Typical session (depth=5, 10 queries/iteration):
+- **Duration**: 6-8 minutes
+- **Queries**: 40-50 total
+- **Cost**: $2-5 USD
+- **Entities**: 30-50 discovered
+- **Sources**: 100-150 processed
 
-## Development
+**Performance Modes**:
+- **Fast** (depth=2): 2-3 minutes, ~$1.50
+- **Balanced** (depth=5): 6-8 minutes, ~$3.80
+- **Quality** (depth=7): 12-15 minutes, ~$8
 
-### Project Structure
+---
 
-```
-src/
-├── config/           # Configuration and settings
-├── models/           # Pydantic data models
-├── agents/           # LangGraph workflow and nodes
-├── services/         # Core services (LLM, search, analysis)
-├── reporting/        # Report generation
-├── observability/    # Logging and monitoring
-└── utils/            # Helper utilities
+## Documentation
 
-tests/
-├── unit/             # Unit tests
-├── integration/      # Integration tests
-└── evaluation/       # Evaluation tests with personas
-```
+| Document | Description |
+|----------|-------------|
+| [**QUICK_START.md**](docs/QUICK_START.md) | Installation, usage, configuration, troubleshooting |
+| [**SOLUTION_DESIGN.md**](docs/SOLUTION_DESIGN.md) | Architecture, workflow, technical decisions, implementation details |
+| [**problem_statement.md**](docs/problem_statement.md) | Requirements and objectives |
 
-### Running Tests
+---
+
+## 📄 PDF Report Generation
+
+Convert JSON reports to professionally formatted PDFs:
 
 ```bash
-# All tests
-pytest
+# Convert all reports to PDF (default)
+python convert_to_pdf.py
 
-# Unit tests only
-pytest tests/unit -v
+# Convert latest report only
+python convert_to_pdf.py --latest
 
-# Integration tests
-pytest tests/integration -v
-
-# With coverage
-pytest --cov=src tests/
+# Convert specific session
+python convert_to_pdf.py --session sess_20251208_212522
 ```
 
-## Observability
+**Features:**
+- Professional formatting with color-coded risk levels
+- Executive summary, findings, entity networks
+- Comprehensive analysis sections
+- PDFs saved alongside JSON files in `reports/`
 
-The system includes comprehensive observability:
+See [**docs/PDF_CONVERSION.md**](docs/PDF_CONVERSION.md) for detailed documentation.
 
-- **Audit Logging**: Structured logs for compliance (JSON Lines format)
-- **Session Tracking**: Complete trail of all operations
-- **Performance Metrics**: Search counts, processing time, costs
-- **Error Tracking**: Detailed error logging and recovery
+---
 
-## Security & Compliance
+## Project Structure
 
-- API keys stored in environment variables
-- Sensitive data encrypted at rest
-- Full audit trail for regulatory compliance
-- Source attribution for all facts
-- Confidence scoring for risk assessment
-- Human review flags for critical findings
+```
+deepagents/
+├── config/
+│   └── models.yaml              # Model configuration
+├── src/
+│   ├── main.py                  # Entry point & DeepResearchAgent
+│   ├── agents/
+│   │   ├── graph.py            # LangGraph workflow definition
+│   │   ├── nodes/              # 6 workflow nodes
+│   │   └── edges/              # Routing logic
+│   ├── services/
+│   │   ├── llm/                # OpenAI & Claude services
+│   │   └── search/             # Search execution
+│   ├── models/                 # Pydantic data models & state
+│   ├── prompts/                # Modular prompt templates
+│   ├── observability/          # Dual logging system
+│   ├── config/                 # Settings management
+│   └── utils/                  # Helper functions
+├── docs/                       # Documentation
+├── tests/                      # Test suite with evaluation personas
+├── logs/                       # Audit logs (JSONL)
+└── reports/                    # Generated reports (JSON)
+```
 
-## Limitations
+---
 
-- Relies on publicly available information
-- Search quality depends on OpenAI's web search capability
-- May not access paywalled or restricted sources
-- False positives/negatives possible in risk detection
-- Processing time increases with search depth
+## 🧪 Research Sessions & Test Subjects
 
-## Contributing
+The following subjects have been researched and documented:
 
-See `SOLUTION_DESIGN.md` for detailed architectural information.
+| Subject | Session ID | Report Generated |
+|---------|------------|------------------|
+| **Bill Hwang** | sess_20251208_212522 | ✅ JSON + PDF |
+| **Isabel dos Santos** | sess_20251208_211141 | ✅ JSON + PDF |
+| **Adrian Cole** | sess_20251208_205804 | ✅ JSON + PDF |
+| **Dr. Lena Voronina** | sess_20251208_202514 | ✅ JSON + PDF |
+| **Elon Musk** | sess_20251208_201533 | ✅ JSON + PDF |
 
-## License
+All research reports include comprehensive due diligence analysis with entity graphs, risk assessments, and evidence-based findings.
 
-[Your License Here]
-
-## Support
-
-For issues or questions, please open an issue on GitHub.
-
+---

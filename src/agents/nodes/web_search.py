@@ -6,7 +6,7 @@ from ...models.state import AgentState, SearchIterationData
 from ...models.search_result import WebSearchOutput
 from ...services.search.web_search import SearchExecutor
 from ...config.settings import settings
-from ...observability.detailed_logger import log_node_execution, DetailedLogger
+from ...observability.logger import log_node_execution, DetailedLogger
 
 
 @log_node_execution
@@ -20,14 +20,15 @@ async def execute_web_search(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with search results
     """
-    logger = DetailedLogger(state.get("session_id", "unknown"))
-    search_executor = SearchExecutor(session_id=state.get("session_id"))
+    session_id = state.get("session_id", "unknown")
+    logger = DetailedLogger(session_id)
+    search_executor = SearchExecutor(session_id=session_id)
     
-    # Get pending queries (or generate if none)
+    # Get pending queries
     queries = state.get("pending_queries", [])
     
     if not queries:
-        logger.log("no_queries", {"message": "No pending queries to execute"})
+        logger.log_warning("No pending queries to execute")
         return state
     
     # Execute searches in parallel
@@ -35,10 +36,11 @@ async def execute_web_search(state: AgentState) -> AgentState:
     current_depth = state.get("current_depth", 0)
     
     # Initialize search iteration data for audit trail
+    web_search_config = settings.get_model_config("web_search")
     iteration_data: SearchIterationData = {
         "goal": f"Search iteration at depth {current_depth}",
         "queries": queries[:settings.max_queries_per_depth],
-        "model_used": settings.openai_search_model,
+        "model_used": web_search_config.get("model"),
         "new_entities": [],
         "sources_found": 0,
         "errors": []
@@ -115,13 +117,13 @@ async def execute_web_search(state: AgentState) -> AgentState:
     # Add search iteration to audit trail and store in state
     state["search_iterations"].append(iteration_data)
     
-    print("\n\n\n\n\n--------------------------------")
-    print("State after execute_web_search:")
-    import json
-    print(json.dumps(state, indent=2, default=str))
-    print("--------------------------------")
+    # print("\n\n\n\n\n--------------------------------")
+    # print("State after execute_web_search:")
+    # import json
+    # print(json.dumps(state, indent=2, default=str))
+    # print("--------------------------------")
     
-    exit()
+    # exit()
     
     return state
 

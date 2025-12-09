@@ -4,6 +4,7 @@ venv/
 env/
 .venv/
 docs/problem_statement.md
+.cursor
 
 
 # Python

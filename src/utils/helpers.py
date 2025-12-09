@@ -1,5 +1,8 @@
-"""General helper utilities."""
+"""General helper utilities for formatting and session management."""
+
 from datetime import datetime
+from typing import Dict, Any
+
 
 def format_duration(seconds: float) -> str:
     """Format duration in seconds to human-readable string.
@@ -41,7 +44,10 @@ def truncate_text(text: str, max_length: int = 100) -> str:
 
 
 def generate_session_id() -> str:
-    """Generate a unique session ID.
+    """
+    Generate a unique session ID based on current timestamp.
+    
+    Format: sess_YYYYMMDD_HHMMSS
     
     Returns:
         Session ID string
@@ -49,13 +55,28 @@ def generate_session_id() -> str:
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     return f"sess_{timestamp}"
 
-async def extract_tokens(response):    
-    u = response.context_wrapper.usage
+
+async def extract_tokens(response) -> Dict[str, int]:
+    """
+    Extract token usage information from OpenAI Agents SDK response.
+    
+    Args:
+        response: Response object from OpenAI Agents SDK
+        
+    Returns:
+        Dictionary with token usage counts:
+        - input_tokens: Number of input tokens
+        - output_tokens: Number of output tokens
+        - total_tokens: Sum of input and output tokens
+        - cached_tokens: Number of cached tokens
+        - reasoning_tokens: Number of reasoning tokens (for o1/o3 models)
+    """
+    usage = response.context_wrapper.usage
     return {
-        "input_tokens": u.input_tokens,
-        "output_tokens": u.output_tokens,
-        "total_tokens": u.input_tokens + u.output_tokens,
-        "cached_tokens": u.input_tokens_details.cached_tokens,
-        "reasoning_tokens": u.output_tokens_details.reasoning_tokens,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "total_tokens": usage.input_tokens + usage.output_tokens,
+        "cached_tokens": usage.input_tokens_details.cached_tokens,
+        "reasoning_tokens": usage.output_tokens_details.reasoning_tokens,
     }
 

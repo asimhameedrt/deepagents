@@ -1,4 +1,10 @@
-"""Web search execution service."""
+"""
+Web search execution service.
+
+This module provides a high-level interface for executing web searches
+using OpenAI's web search tool, with support for parallel execution
+and concurrency control.
+"""
 
 import asyncio
 from typing import List, Optional
@@ -8,15 +14,21 @@ from ...services.llm.openai_service import OpenAIService
 
 
 class SearchExecutor:
-    """Executes web searches using OpenAI."""
+    """
+    Executes web searches using OpenAI's web search tool.
+    
+    Provides both single and parallel search execution with
+    automatic concurrency control and rate limiting.
+    """
     
     def __init__(self, session_id: Optional[str] = None):
-        """Initialize the search executor.
+        """
+        Initialize the search executor.
         
         Args:
-            session_id: Session ID for logging
+            session_id: Session ID for logging and tracking
         """
-        self.openai = OpenAIService(session_id=session_id)
+        self.openai = OpenAIService(session_id=session_id, operation="web_search")
     
     async def search(
         self, 

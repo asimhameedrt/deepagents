@@ -1,90 +1,119 @@
-"""Main entry point for the Deep Research Agent."""
+"""
+Main entry point for the Deep Research Agent.
+
+This module provides the main DeepResearchAgent class and CLI interface
+for conducting comprehensive due diligence research.
+"""
 
 import asyncio
 import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+from langfuse.langchain import CallbackHandler
 
 from .config.settings import settings
 from .models.state import AgentState
 from .agents.graph import research_graph
 from .utils.helpers import generate_session_id, format_duration
-from .observability.audit_logger import AuditLogger
-from langfuse import Langfuse, get_client
-from langfuse.langchain import CallbackHandler
+from .observability.logger import DetailedLogger
 
 class DeepResearchAgent:
-    """Main agent class for conducting deep research."""
+    """
+    Main agent class for conducting deep research investigations.
+    
+    This class orchestrates the entire research workflow using LangGraph,
+    manages observability through audit logging, and optionally integrates
+    with LangFuse for tracing.
+    """
     
     def __init__(self):
-        """Initialize the agent."""
-        self.graph = research_graph
-        self.audit_logger = AuditLogger()
+        """
+        Initialize the deep research agent.
         
-        # Initialize LangFuse callback handler if available (only import if keys configured)
-        self.langfuse_handler = None
-        if settings.langfuse_public_key and settings.langfuse_secret_key:
-            try:
-                # --- Langfuse init (optional explicit init instead of env-only) ---
-                langfuse_client = get_client(
-                    public_key=settings.langfuse_public_key,
-                    secret_key=settings.langfuse_secret_key,
-                )
-                self.langfuse_handler = CallbackHandler()
-            except Exception:
-                self.langfuse_handler = None
+        Sets up:
+        - LangGraph workflow
+        - LangFuse tracing (if configured)
+        """
+        self.graph = research_graph
+        self.langfuse_handler = self._initialize_langfuse()
+    
+    def _initialize_langfuse(self) -> Optional[CallbackHandler]:
+        """
+        Initialize LangFuse callback handler if credentials are configured.
+        
+        Returns:
+            CallbackHandler if successful, None otherwise
+        """
+        if not (settings.langfuse_public_key and settings.langfuse_secret_key):
+            return None
+        
+        try:
+            # Initialize LangFuse client
+            # get_client(
+            #     public_key=settings.langfuse_public_key
+            # )
+            return CallbackHandler()
+        except Exception as e:
+            print(f"⚠️  Warning: Could not initialize LangFuse: {e}")
+            return None
     
     async def research(
         self,
         subject: str,
         context: Optional[str] = None,
         max_depth: Optional[int] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Conduct deep research on a subject.
         
+        This is the main entry point for research operations. It:
+        1. Initializes the session
+        2. Executes the LangGraph workflow
+        3. Generates the final report
+        4. Logs all operations for audit
+        
         Args:
-            subject: Name of person or entity to research
+            subject: Name of person or entity to research (required)
             context: Additional context about the subject
-            max_depth: Maximum search depth (defaults to config)
+            max_depth: Maximum search depth (defaults to config value)
             
         Returns:
-            Dict with research report and metadata
+            Dictionary containing:
+            - session_id: Unique session identifier
+            - success: Boolean indicating if research completed successfully
+            - report: Final research report (if successful)
+            - duration: Human-readable duration string
+            - metrics: Research metrics (queries, sources, entities, depth)
+            - error: Error message (if failed)
         """
+        # Validate input
+        if not subject or not subject.strip():
+            return {
+                "success": False,
+                "error": "Subject name is required and cannot be empty"
+            }
+        
         # Generate session ID
         session_id = generate_session_id()
         
-        # Initialize state
+        # Initialize state (minimal - initialize node will set defaults)
         initial_state: AgentState = {
             "session_id": session_id,
             "subject": subject,
             "subject_context": context,
-            "current_depth": 0,
             "max_depth": max_depth or settings.max_search_depth,
-            "queries_executed": [],
-            "pending_queries": [],
-            "should_continue": True,
-            "termination_reason": None,
-            "start_time": datetime.utcnow(),
-            "search_count": 0,
-            "extraction_count": 0,
-            "error_count": 0,
-            "iteration_count": 0,
-            "search_iterations": [],  # For audit trail
-            "messages": []
         }
         
-        # Log session start
-        self.audit_logger.log_session_start(
-            session_id=session_id,
-            subject=subject,
-            config={
-                "max_depth": initial_state["max_depth"],
-                "max_queries_per_depth": settings.max_queries_per_depth,
-            }
-        )
+        # Initialize logger for this session
+        logger = DetailedLogger(session_id)
+        logger.log("session_start", {
+            "subject": subject,
+            "max_depth": initial_state["max_depth"],
+            "max_queries_per_depth": settings.max_queries_per_depth,
+        })
         
         # Log to console
         print(f"\n{'='*80}")
@@ -97,33 +126,87 @@ class DeepResearchAgent:
         
         # Execute the graph
         try:
-            config = {
-                "recursion_limit": 100,  # Allow up to 100 node executions
-                "max_concurrency": 10
-            }
+            # Configure graph execution
+            config = self._build_execution_config()
             
-            # Add LangFuse callback if available
-            if self.langfuse_handler:
-                config["callbacks"] = [self.langfuse_handler]
-            
+            # Run the research workflow
             final_state = await self.graph.ainvoke(initial_state, config=config)
             
-            # # Extract report
-            # report = final_state.get("report")
+            # Extract report
+            report = final_state.get("final_report")
+            
+            # Calculate duration
+            duration = format_duration(
+                (datetime.utcnow() - final_state["start_time"]).total_seconds()
+            )
+            
+            # Log session complete
+            logger.log("session_complete", {
+                "subject": subject,
+                "duration": duration,
+                "total_queries": len(final_state.get("queries_executed", [])),
+                "risk_level": report.get("risk_level", "UNKNOWN") if report else "UNKNOWN",
+                "termination_reason": final_state.get("termination_reason")
+            })
+            
+            # Print summary
+            print(f"\n{'='*80}")
+            print(f"✅ Research Complete")
+            print(f"{'='*80}")
+            print(f"Duration: {duration}")
+            print(f"Total Queries: {len(final_state.get('queries_executed', []))}")
+            print(f"Total Sources: {sum(s.get('sources_found', 0) for s in final_state.get('search_iterations', []))}")
+            print(f"Total Entities: {len(final_state.get('discovered_entities', {}))}")
+            if report:
+                print(f"Risk Level: {report.get('risk_level', 'UNKNOWN')}")
+                print(f"Red Flags: {len(report.get('red_flags', []))}")
+                print(f"Report saved: {settings.reports_dir}/{session_id}_report.json")
+            print(f"{'='*80}\n")
+            
+            return {
+                "session_id": session_id,
+                "success": True,
+                "report": report,
+                "duration": duration,
+                "metrics": {
+                    "queries": len(final_state.get("queries_executed", [])),
+                    "sources": sum(s.get("sources_found", 0) for s in final_state.get("search_iterations", [])),
+                    "entities": len(final_state.get("discovered_entities", {})),
+                    "depth": final_state.get("current_depth", 0)
+                }
+            }
                 
         except Exception as e:
             error_msg = f"Error during research: {e}"
             print(f"❌ {error_msg}")
-            self.audit_logger.log("error", {
-                "session_id": session_id,
+            logger.log("session_error", {
                 "subject": subject,
-                "error": str(e)
+                "error_type": type(e).__name__,
+                "error_message": str(e)
             })
             return {
                 "session_id": session_id,
                 "success": False,
                 "error": str(e)
             }
+    
+    def _build_execution_config(self) -> Dict[str, Any]:
+        """
+        Build configuration for graph execution.
+        
+        Returns:
+            Configuration dictionary for LangGraph
+        """
+        config = {
+            "recursion_limit": 100,  # Allow up to 100 node executions
+            "max_concurrency": 10
+        }
+        
+        # Add LangFuse callback if available
+        if self.langfuse_handler:
+            config["callbacks"] = [self.langfuse_handler]
+        
+        return config
     
     def _save_report(self, report, session_id: str) -> Path:
         """Save report to file."""
