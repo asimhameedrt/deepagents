@@ -32,7 +32,7 @@ async def main():
     result = await agent.research(
         subject=subject,
         context=context,
-        max_depth=1
+        max_depth=None  # Use default from config (5)
     )
     
     if result["success"]:

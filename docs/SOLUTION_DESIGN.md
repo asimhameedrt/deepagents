@@ -167,6 +167,12 @@ Modular prompt architecture:
 
 **Optional**: LangFuse integration for distributed tracing.
 
+![LangGraph Tracing](langgraph_tracing.png)
+
+*Example of LangGraph execution trace in LangFuse showing the complete workflow with timing, costs, and intermediate states.*
+
+
+
 ---
 
 ## Configuration
@@ -334,8 +340,7 @@ docs/
 └── SOLUTION_DESIGN.md       # This file
 
 tests/
-├── evaluation/              # Test personas
-└── *.py                     # Test suites
+└── *.py                     # LLM Test suites
 ```
 
 ---

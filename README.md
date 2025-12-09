@@ -177,8 +177,8 @@ async def run_research():
     agent = DeepResearchAgent()
     
     result = await agent.research(
-        subject="Sam Bankman-Fried",
-        context="Founder of FTX",
+        subject="Andrew NG",
+        context="computer scientist",
         max_depth=5
     )
     
@@ -269,7 +269,6 @@ Typical session (depth=5, 10 queries/iteration):
 |----------|-------------|
 | [**QUICK_START.md**](docs/QUICK_START.md) | Installation, usage, configuration, troubleshooting |
 | [**SOLUTION_DESIGN.md**](docs/SOLUTION_DESIGN.md) | Architecture, workflow, technical decisions, implementation details |
-| [**problem_statement.md**](docs/problem_statement.md) | Requirements and objectives |
 
 ---
 
